@@ -21,6 +21,7 @@ ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
 ROOT_URLCONF = "mec_connect.urls"
 WSGI_APPLICATION = "mec_connect.wsgi.application"
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "static"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 #
