@@ -19,3 +19,7 @@ migrate:
 
 admin:
 	@xdg-open http://localhost:8002/admin
+
+freeze-reqs:
+	@poetry lock --no-update
+	@poetry export --output requirements.txt --without-hashes
