@@ -1,0 +1,16 @@
+on:
+  workflow_call:
+
+jobs:
+    check:
+        name: Check
+        runs-on: ubuntu-latest
+        steps:
+          - name: Check out the repository
+            uses: actions/checkout@v4
+
+          - name: Setup Pre-commit
+            uses: pre-commit/action@v3.0.1
+
+          - uses: pre-commit-ci/lite-action@v1.0.2
+            if: always()
