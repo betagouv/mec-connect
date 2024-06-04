@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from django.urls import path
+from django.urls import path, reverse_lazy
+from django.views.generic import RedirectView
 from ninja import NinjaAPI
 
 from .views import router
@@ -17,5 +18,6 @@ api = NinjaAPI(
 api.add_router("", router)
 
 urlpatterns = [
+    path("", RedirectView.as_view(url=reverse_lazy("admin:index"))),
     path("api/", api.urls),
 ]
