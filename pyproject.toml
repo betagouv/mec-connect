@@ -19,6 +19,7 @@ celery = "^5.4.0"
 redis = "^5.0.4"
 django-model-utils = "^4.5.1"
 django-json-widget = "^2.0.1"
+gunicorn = "^22.0.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.7"
