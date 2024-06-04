@@ -80,6 +80,12 @@ TEMPLATES = [
 DATABASES = {"default": env.db()}
 
 #
+# Authentication
+# https://simpleisbetterthancomplex.com/tutorial/2016/07/22/how-to-extend-django-user-model.html#abstractbaseuser
+#
+AUTH_USER_MODEL = "main.User"
+
+#
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 #
@@ -107,7 +113,7 @@ CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 CELERY_BROKER_URL = env.str("BROKER_URL")
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-CELERY_ALWAYS_EAGER = True
+CELERY_ALWAYS_EAGER = env.bool("CELERY_ALWAYS_EAGER", default=False)
 
 #
 # Recoco
