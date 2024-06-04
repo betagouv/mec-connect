@@ -165,4 +165,4 @@ persist/
 .docker
 
 # static files
-static/
+static/*
