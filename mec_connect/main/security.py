@@ -25,3 +25,5 @@ class SecurityAuth(APIKeyHeader):
             )
             if not hmac.compare_digest(digest.hexdigest(), signature):
                 raise HttpError(401, "Invalid signature")
+
+        return request.user
