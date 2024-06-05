@@ -67,6 +67,10 @@ class WebhookEvent(BaseModel):
         )
 
 
+class GristColumn(BaseModel):
+    pass
+
+
 class GristConfig(BaseModel):
     doc_id = models.CharField(max_length=32)
     table_id = models.CharField(max_length=32)

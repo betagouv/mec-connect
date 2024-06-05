@@ -9,12 +9,13 @@ from ninja import Router
 
 from .models import WebhookEvent
 from .schemas import WebhookEventSchema
+from .security import SecurityAuth
 from .triggers import on_webhook_event_commit
 
 router = Router()
 
 
-@router.post("/webhook")
+@router.post("/webhook", auth=SecurityAuth())
 def webhook(request: HttpRequest, payload: WebhookEventSchema):
     # FIXME: fix this stuff, make something simpler
     data = payload.dict()

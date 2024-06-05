@@ -10,6 +10,7 @@ for k, v in {
     "RECOCO_API_URL": "http://localhost:8000",
     "RECOCO_API_USERNAME": "",
     "RECOCO_API_PASSWORD": "",
+    "WEBHOOK_SECRET": "youshallnotpass",
 }.items():
     os.environ.setdefault(k, v)
 

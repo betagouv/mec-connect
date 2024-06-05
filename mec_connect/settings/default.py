@@ -117,7 +117,12 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_ALWAYS_EAGER = env.bool("CELERY_ALWAYS_EAGER", default=False)
 
 #
-# Recoco
+# Webhook security
+#
+WEBHOOK_SECRET = env.str("WEBHOOK_SECRET")
+
+#
+# Recoco API congiguration
 #
 RECOCO_API_URL = env.str("RECOCO_API_URL")
 RECOCO_API_USERNAME = env.str("RECOCO_API_USERNAME")
