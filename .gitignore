@@ -166,3 +166,6 @@ persist/
 
 # static files
 static/*
+
+# dev scripts
+*_local.py

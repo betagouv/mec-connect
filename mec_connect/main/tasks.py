@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import assert_never
-
 from celery import shared_task
 from celery.utils.log import get_task_logger
 
@@ -12,14 +10,6 @@ from .models import GristConfig, WebhookEvent
 logger = get_task_logger(__name__)
 
 
-def get_grist_row_class(object_type: str) -> type[GristProjectRow]:
-    match object_type:
-        case ObjectType.PROJECT:
-            return GristProjectRow
-        case _:
-            assert_never(object_type, "Invalid object_type")
-
-
 @shared_task
 def process_webhook_event(event_id: int):
     try:
@@ -28,24 +18,32 @@ def process_webhook_event(event_id: int):
         logger.error(f"WebhookEvent with id={event_id} does not exist")
         return
 
-    grist_row_class = get_grist_row_class(event.object_type)
+    match event.object_type:
+        case ObjectType.PROJECT:
+            process_project_event(event=event)
+        case ObjectType.SURVEY_ANSWER:
+            process_survey_answer_event(event=event)
+        case _:
+            pass
 
-    # TODO: move table_id to somewhere else, GristConfig?...
-    table_id = "1"
+    event.status = WebhookEventStatus.PROCESSED
+    event.save()
 
-    for grist_config in GristConfig.objects.filter(enabled=True, object_type=event.object_type):
+
+def process_project_event(event: WebhookEvent):
+    for grist_config in GristConfig.objects.filter(enabled=True):
         client = GristApiClient.from_config(grist_config)
 
         resp = client.get_records(
-            table_id=table_id,
+            table_id=grist_config.table_id,
             filter={"object_id": [event.object_id]},
         )
 
         if len(records := resp["records"]):
             client.update_records(
-                table_id="1",
+                table_id=grist_config.table_id,
                 records={
-                    records[0]["id"]: grist_row_class.from_payload_object(
+                    records[0]["id"]: GristProjectRow.from_payload_object(
                         obj=event.payload["object"]
                     ).to_dict(),
                 },
@@ -53,17 +51,27 @@ def process_webhook_event(event_id: int):
             continue
 
         client.create_records(
-            table_id=table_id,
+            table_id=grist_config.table_id,
             records=[
                 {"object_id": event.object_id}
-                | grist_row_class.from_payload_object(obj=event.payload["object"]).to_dict(),
+                | GristProjectRow.from_payload_object(obj=event.payload["object"]).to_dict(),
             ],
         )
 
-    event.status = WebhookEventStatus.PROCESSED
-    event.save()
 
+def process_survey_answer_event(event: WebhookEvent):
+    for grist_config in GristConfig.objects.filter(enabled=True):
+        client = GristApiClient.from_config(grist_config)
 
-@shared_task
-def build_grist_table():
-    pass
+        project_id = event.payload["object"]["project_id"]
+
+        resp = client.get_records(
+            table_id=grist_config.table_id,
+            filter={"object_id": [project_id]},
+        )
+        records = resp["records"]
+
+        if len(records) == 0:
+            continue
+
+        # TODO:update columns

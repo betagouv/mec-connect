@@ -12,7 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from mec_connect.utils.json import PrettyJSONEncoder
 from mec_connect.utils.models import BaseModel
 
-from .choices import ObjectType, WebhookEventStatus
+from .choices import GristColumnType, ObjectType, WebhookEventStatus
 from .managers import UserManager
 
 
@@ -67,12 +67,33 @@ class WebhookEvent(BaseModel):
         )
 
 
+class GristColumn(BaseModel):
+    col_id = models.CharField(max_length=64, unique=True)
+    label = models.CharField(max_length=128)
+    type = models.CharField(max_length=32, choices=GristColumnType.choices)
+
+    class Meta:
+        db_table = "gristcolumn"
+        ordering = ("col_id",)
+        verbose_name = "Grist column"
+        verbose_name_plural = "Grist columns"
+
+    def __str__(self) -> str:
+        return self.col_id
+
+
 class GristConfig(BaseModel):
     doc_id = models.CharField(max_length=32)
     table_id = models.CharField(max_length=32)
+    table_columns = models.ManyToManyField(GristColumn, related_name="grist_configs")
     enabled = models.BooleanField(default=True)
-    object_type = models.CharField(max_length=32, choices=ObjectType.choices)
-    columns = models.JSONField(default=dict, encoder=PrettyJSONEncoder)
+
+    object_type = models.CharField(
+        max_length=32, choices=ObjectType.choices, default=ObjectType.PROJECT
+    )
+
+    # DEPRECATED
+    columns = models.JSONField(default=dict, encoder=PrettyJSONEncoder, null=True, blank=True)
 
     api_base_url = models.CharField(max_length=128)
     api_key = models.CharField(max_length=64)
