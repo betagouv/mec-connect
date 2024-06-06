@@ -6,7 +6,7 @@ from main.models import GristColumn
 
 columns_spec = {
     "object_id": {
-        "label": "Object ID",
+        "label": "ID",
         "type": GristColumnType.TEXT,
     },
     "name": {
@@ -126,9 +126,11 @@ columns_spec = {
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
+        position = 0
         for col_id, col_data in columns_spec.items():
             self.stdout.write(f"Creating column {col_id}")
             GristColumn.objects.update_or_create(
                 col_id=col_id,
-                defaults=col_data,
+                defaults=col_data | {"position": position},
             )
+            position += 1

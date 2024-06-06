@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.core.management.base import BaseCommand, CommandParser
 from main.grist import GristApiClient
 from main.models import GristConfig
+from main.recoco import RecocoApiClient
 
 
 class Command(BaseCommand):
@@ -38,12 +39,17 @@ class Command(BaseCommand):
                 return
 
         self.stdout.write(f"Creating table {config.table_id} in Grist")
-        # grist_client.create_table(table_id=config.table_id, columns=config.columns)
+        grist_client.create_table(
+            table_id=config.table_id,
+            columns=config.formatted_table_columns,
+        )
 
+        recoco_client = RecocoApiClient()
+        for project in recoco_client.get_projects():
+            self.stdout.write(f"Creating project {project['name']} in Grist")
+
+        # TODO: fill the table with records
         # grist_client.create_records(
         #     table_id=config.table_id,
-        #     records=[
-        #         GristProjectRow.from_payload_object(p).to_dict()
-        #         for p in RecocoApiClient().get_projects()
-        #     ],
+        #     records=[...],
         # )

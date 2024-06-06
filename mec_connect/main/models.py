@@ -58,6 +58,10 @@ class WebhookEvent(BaseModel):
         db_table = "webhookevent"
         ordering = ("-created",)
 
+    @property
+    def object_data(self) -> dict[str, Any]:
+        return self.payload.get("object", {})
+
     @classmethod
     def create_from_request(cls, request: WSGIRequest, **kwargs: dict[str, Any]) -> Self:
         return cls.objects.create(
@@ -71,6 +75,7 @@ class GristColumn(BaseModel):
     col_id = models.CharField(max_length=64, unique=True)
     label = models.CharField(max_length=128)
     type = models.CharField(max_length=32, choices=GristColumnType.choices)
+    position = models.IntegerField(default=0)
 
     class Meta:
         db_table = "gristcolumn"
@@ -108,6 +113,20 @@ class GristConfig(BaseModel):
         # if self.columns ...
         # raise ValidationError()
         pass
+
+    @property
+    def formatted_table_columns(self) -> list[dict[str, Any]]:
+        # TODO: sort
+        return [
+            {
+                "id": col.col_id,
+                "fields": {
+                    "label": col.label,
+                    # "type": col.type,
+                },
+            }
+            for col in self.table_columns.order_by("position", "col_id")
+        ]
 
 
 class User(BaseModel, AbstractBaseUser, PermissionsMixin):
