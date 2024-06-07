@@ -126,11 +126,9 @@ columns_spec = {
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        position = 0
         for col_id, col_data in columns_spec.items():
             self.stdout.write(f"Creating column {col_id}")
             GristColumn.objects.update_or_create(
                 col_id=col_id,
-                defaults=col_data | {"position": position},
+                defaults=col_data,
             )
-            position += 1

@@ -6,7 +6,7 @@ from django.db.models import JSONField
 from django.utils.translation import gettext_lazy as _
 from django_json_widget.widgets import JSONEditorWidget
 
-from .models import GristColumn, GristConfig, User, WebhookEvent
+from .models import GristColumn, GristConfig, GritColumnConfig, User, WebhookEvent
 
 
 @admin.register(WebhookEvent)
@@ -44,8 +44,9 @@ class GristColumnAdmin(admin.ModelAdmin):
 
 
 class GristColumnInline(admin.TabularInline):
-    model = GristConfig.table_columns.through
-    extra = 1
+    model = GritColumnConfig
+    extra = 0
+    ordering = ("position", "grist_column__col_id")
 
 
 @admin.register(GristConfig)

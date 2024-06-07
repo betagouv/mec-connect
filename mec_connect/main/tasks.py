@@ -47,7 +47,9 @@ def process_project_event(event: WebhookEvent):
 
         row_data = map_from_project_payload_object(
             obj=event.object_data,
-            available_keys=grist_config.table_columns.values_list("col_id", flat=True),
+            available_keys=grist_config.column_configs.values_list(
+                "grist_column__col_id", flat=True
+            ),
         )
 
         if len(records := resp["records"]):
@@ -79,7 +81,9 @@ def process_survey_answer_event(event: WebhookEvent):
         if len(records := resp["records"]):
             row_data = map_from_survey_answer_payload_object(
                 obj=event.object_data,
-                available_keys=grist_config.table_columns.values_list("col_id", flat=True),
+                available_keys=grist_config.column_configs.values_list(
+                    "grist_column__col_id", flat=True
+                ),
             )
 
             client.update_records(
