@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from django.core.management.base import BaseCommand, CommandParser
-from main.grist import GristApiClient
+from main.grist import GristApiClient, map_from_project_payload_object
 from main.models import GristConfig
 from main.recoco import RecocoApiClient
 
@@ -34,7 +34,7 @@ class Command(BaseCommand):
         for table in response["tables"]:
             if table["id"] == config.table_id:
                 self.stdout.write(
-                    self.style.ERROR(f"Table {config.table_id} already exists, aborting...")
+                    self.style.ERROR(f"Table {config.table_id} already exists, aborting.")
                 )
                 return
 
@@ -48,8 +48,12 @@ class Command(BaseCommand):
         for project in recoco_client.get_projects():
             self.stdout.write(f"Creating project {project['name']} in Grist")
 
-        # TODO: fill the table with records
-        # grist_client.create_records(
-        #     table_id=config.table_id,
-        #     records=[...],
-        # )
+            row_data = map_from_project_payload_object(
+                obj=project,
+                available_keys=config.column_configs.values_list("grist_column__col_id", flat=True),
+            )
+
+            grist_client.create_records(
+                table_id=config.table_id,
+                records=[{"object_id": project["id"]} | row_data],
+            )
