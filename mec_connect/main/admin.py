@@ -6,7 +6,7 @@ from django.db.models import JSONField
 from django.utils.translation import gettext_lazy as _
 from django_json_widget.widgets import JSONEditorWidget
 
-from .models import GristConfig, User, WebhookEvent
+from .models import GristColumn, GristConfig, GritColumnConfig, User, WebhookEvent
 
 
 @admin.register(WebhookEvent)
@@ -28,24 +28,42 @@ class WebhookEventAdmin(admin.ModelAdmin):
     )
 
 
+@admin.register(GristColumn)
+class GristColumnAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "col_id",
+        "label",
+        "type",
+    )
+    search_fields = (
+        "col_id",
+        "label",
+    )
+    list_filter = ("type",)
+
+
+class GristColumnInline(admin.TabularInline):
+    model = GritColumnConfig
+    extra = 0
+    ordering = ("position", "grist_column__col_id")
+
+
 @admin.register(GristConfig)
 class GristConfigAdmin(admin.ModelAdmin):
     list_display = (
         "id",
-        "api_key",
         "api_base_url",
         "enabled",
-        "object_type",
     )
 
-    list_filter = (
-        "enabled",
-        "object_type",
-    )
+    list_filter = ("enabled",)
 
     formfield_overrides = {
         JSONField: {"widget": JSONEditorWidget},
     }
+
+    inlines = (GristColumnInline,)
 
 
 @admin.register(User)

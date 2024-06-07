@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import abc
 import json
-from dataclasses import asdict, dataclass
 from typing import Any, Self
 
 from httpx import Client, Response
@@ -52,17 +50,7 @@ class GristApiClient:
         with self.client_factory() as client:
             resp = client.post(
                 f"docs/{self.doc_id}/tables/",
-                json={
-                    "tables": [
-                        {
-                            "id": table_id,
-                            "columns": [
-                                {"id": k, "fields": {"label": v["label"]}}
-                                for k, v in columns.items()
-                            ],
-                        }
-                    ]
-                },
+                json={"tables": [{"id": table_id, "columns": columns}]},
             )
             return resp.json()
 
@@ -91,47 +79,43 @@ class GristApiClient:
             return resp.json()
 
 
-class GristRow(abc.ABC):
-    @classmethod
-    @abc.abstractmethod
-    def from_payload_object(cls, obj: dict[str, Any]) -> Self:
-        pass
+def map_from_project_payload_object(
+    obj: dict[str, Any], available_keys: list[str] | None = None
+) -> dict[str, Any]:
+    data = {"name": obj["name"]}
+
+    if available_keys is None:
+        return data
+
+    return {k: data[k] for k in available_keys if k in data}
 
 
-@dataclass
-class GristProjectRow(GristRow):
-    name: str
-    context: str | None = None
-    additions: str | None = None
-    topics: str | None = None
-    details: str | None = None
-    perimeter: str | None = None
-    diagnostic_anct: str | None = None
-    attachment: str | None = None
-    diagnostic_is_shared: bool = False
-    maturity: str | None = None
-    ownership: str | None = None
-    action: str | None = None
-    partners: str | None = None
-    budget: str | None = None
-    forecast_financing_plan: str | None = None
-    forecast_financing_plan_attachment: str | None = None
-    final_financing_plan: str | None = None
-    forecast_financing_plan_attachment: str | None = None
-    calendar: str | None = None
-    administrative_procedures: str | None = None
-    dependencies: str | None = None
-    evaluation_indicator: str | None = None
-    ecological_transition_compass: str | None = None
-    verdict: str | None = None
-    grant_amount: float | None = None
+def map_from_survey_answer_payload_object(
+    obj: dict[str, Any], available_keys: list[str] | None = None
+) -> dict[str, Any]:
+    data = {}
 
-    @classmethod
-    def from_payload_object(cls, obj: dict[str, Any]) -> Self:
-        return GristProjectRow(
-            name=obj["name"],
-            topics=", ".join(sorted([t["name"] for t in obj.get("topics", [])])),
-        )
+    def _format_choices(_obj):
+        return ",".join([c["text"] for c in _obj["choices"]])
 
-    def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+    # TODO: need a question slug
+    match obj["question"]["text_short"]:
+        case "Thématique(s)":
+            data["topics"] = _format_choices(obj)
+        case "Description de l'action":
+            data["action"] = obj["comment"]
+        case "Partenaires":
+            data["partners"] = obj["comment"]
+        case "Calendrier":
+            data["calendar"] = obj["comment"]
+        case "Procédures administratives":
+            data["administrative_procedures"] = obj["comment"]
+        case "Autres programmes et contrats":
+            data["dependencies"] = _format_choices(obj)
+        case _:
+            pass
+
+    if available_keys is None:
+        return data
+
+    return {k: data[k] for k in available_keys if k in data}

@@ -132,3 +132,74 @@ def project_payload_object():
             },
         ],
     }
+
+
+@pytest.fixture
+def survey_answer_payload_object():
+    return {
+        "id": 12583,
+        "created_on": "2023-11-03T09:48:55.478361+01:00",
+        "updated_on": "2024-06-05T16:55:15.302646+02:00",
+        "question": {
+            "id": 85,
+            "text": "Thématique(s)",
+            "text_short": "Thématique(s)",
+            "is_multiple": True,
+            "choices": [
+                {"id": 258, "value": "13", "text": "Commerce rural"},
+                {
+                    "id": 247,
+                    "value": "2",
+                    "text": "Citoyenneté / Participation de la population à la vie locale",
+                },
+                {"id": 249, "value": "4", "text": "Logement / Habitat"},
+                {"id": 254, "value": "9", "text": "Patrimoine"},
+                {"id": 303, "value": "15", "text": "Tourisme"},
+                {
+                    "id": 255,
+                    "value": "10",
+                    "text": "Transition écologique et biodiversité",
+                },
+                {
+                    "id": 250,
+                    "value": "5",
+                    "text": "Transition énergétique",
+                },
+                {
+                    "id": 251,
+                    "value": "6",
+                    "text": "Transition digitale / Numérique",
+                },
+                {
+                    "id": 304,
+                    "value": "16",
+                    "text": "Services à la population (hors commerce)",
+                },
+                {"id": 306, "value": "17", "text": "Autre"},
+            ],
+        },
+        "session": 806,
+        "project": 831,
+        "choices": [
+            {"id": 258, "value": "13", "text": "Commerce rural"},
+            {
+                "id": 247,
+                "value": "2",
+                "text": "Citoyenneté / Participation de la population à la vie locale",
+            },
+            {
+                "id": 255,
+                "value": "10",
+                "text": "Transition écologique et biodiversité",
+            },
+            {"id": 250, "value": "5", "text": "Transition énergétique"},
+        ],
+        "updated_by": {
+            "username": "matthieu",
+            "first_name": "Matthieu",
+            "last_name": "Etchegoyen",
+            "email": "matthieu.etchegoyen@beta.gouv.fr",
+            "profile": {"organization": None, "organization_position": None},
+            "is_active": True,
+        },
+    }

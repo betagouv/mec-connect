@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from django.core.management.base import BaseCommand, CommandParser
-from main.grist import GristApiClient, GristProjectRow
+from main.grist import GristApiClient
 from main.models import GristConfig
 from main.recoco import RecocoApiClient
 
@@ -22,11 +22,11 @@ class Command(BaseCommand):
             config: GristConfig = GristConfig.objects.get(id=options["grist_config"])
         except GristConfig.DoesNotExist:
             self.stdout.write(self.style.ERROR("Config not found for the given UUID"))
-            return 1
+            return
 
         if not config.enabled:
             self.stdout.write(self.style.ERROR("Config is not enabled"))
-            return 1
+            return
 
         grist_client = GristApiClient.from_config(config)
 
@@ -38,12 +38,18 @@ class Command(BaseCommand):
                 )
                 return
 
-        grist_client.create_table(table_id=config.table_id, columns=config.columns)
-
-        grist_client.create_records(
+        self.stdout.write(f"Creating table {config.table_id} in Grist")
+        grist_client.create_table(
             table_id=config.table_id,
-            records=[
-                GristProjectRow.from_payload_object(p).to_dict()
-                for p in RecocoApiClient().get_projects()
-            ],
+            columns=config.formatted_table_columns,
         )
+
+        recoco_client = RecocoApiClient()
+        for project in recoco_client.get_projects():
+            self.stdout.write(f"Creating project {project['name']} in Grist")
+
+        # TODO: fill the table with records
+        # grist_client.create_records(
+        #     table_id=config.table_id,
+        #     records=[...],
+        # )

@@ -12,7 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from mec_connect.utils.json import PrettyJSONEncoder
 from mec_connect.utils.models import BaseModel
 
-from .choices import ObjectType, WebhookEventStatus
+from .choices import GristColumnType, ObjectType, WebhookEventStatus
 from .managers import UserManager
 
 
@@ -58,6 +58,10 @@ class WebhookEvent(BaseModel):
         db_table = "webhookevent"
         ordering = ("-created",)
 
+    @property
+    def object_data(self) -> dict[str, Any]:
+        return self.payload.get("object", {})
+
     @classmethod
     def create_from_request(cls, request: WSGIRequest, **kwargs: dict[str, Any]) -> Self:
         return cls.objects.create(
@@ -71,8 +75,11 @@ class GristConfig(BaseModel):
     doc_id = models.CharField(max_length=32)
     table_id = models.CharField(max_length=32)
     enabled = models.BooleanField(default=True)
-    object_type = models.CharField(max_length=32, choices=ObjectType.choices)
-    columns = models.JSONField(default=dict, encoder=PrettyJSONEncoder)
+
+    # DEPRECATED
+    object_type = models.CharField(
+        max_length=32, choices=ObjectType.choices, default=ObjectType.PROJECT
+    )
 
     api_base_url = models.CharField(max_length=128)
     api_key = models.CharField(max_length=64)
@@ -83,10 +90,53 @@ class GristConfig(BaseModel):
         verbose_name = "Grist configuration"
         verbose_name_plural = "Grist configurations"
 
-    def clean(self) -> None:
-        # if self.columns ...
-        # raise ValidationError()
-        pass
+    @property
+    def formatted_table_columns(self) -> list[dict[str, Any]]:
+        # TODO: sort
+        return [
+            {
+                "id": col_config.grist_column.col_id,
+                "fields": {
+                    "label": col_config.grist_column.label,
+                    # "type": col.type,
+                },
+            }
+            for col_config in self.column_configs.select_related("grist_column")
+        ]
+
+
+class GristColumn(BaseModel):
+    col_id = models.CharField(max_length=64, unique=True)
+    label = models.CharField(max_length=128)
+    type = models.CharField(max_length=32, choices=GristColumnType.choices)
+
+    class Meta:
+        db_table = "gristcolumn"
+        ordering = ("col_id",)
+        verbose_name = "Grist column"
+        verbose_name_plural = "Grist columns"
+
+    def __str__(self) -> str:
+        return self.col_id
+
+
+class GritColumnConfig(BaseModel):
+    grist_column = models.ForeignKey(
+        GristColumn, on_delete=models.CASCADE, related_name="column_configs"
+    )
+    grist_config = models.ForeignKey(
+        GristConfig, on_delete=models.CASCADE, related_name="column_configs"
+    )
+    position = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = "gritcolumnconfig"
+        ordering = (
+            "position",
+            "grist_column__col_id",
+        )
+        verbose_name = "Grit column config"
+        verbose_name_plural = "Grit column configs"
 
 
 class User(BaseModel, AbstractBaseUser, PermissionsMixin):
