@@ -8,6 +8,7 @@ def project_payload_object():
     return {
         "id": 777,
         "name": "Pôle Santé",
+        "description": "Le projet consiste à créer un pôle santé",
         "status": "IN_PROGRESS",
         "inactive_since": None,
         "created_on": "2023-10-10T09:50:32.182591+02:00",
@@ -194,6 +195,8 @@ def survey_answer_payload_object():
             },
             {"id": 250, "value": "5", "text": "Transition énergétique"},
         ],
+        "comment": "Mon commentaire sur les thématiques",
+        "attachment": None,
         "updated_by": {
             "username": "matthieu",
             "first_name": "Matthieu",

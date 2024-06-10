@@ -16,8 +16,9 @@ class ObjectType(models.TextChoices):
 
 
 class GristColumnType(models.TextChoices):
-    ATTACHMENTS = "attachments", "Attachments"
-    BOOLEAN = "boolean", "Bool"
+    BOOL = "boolean", "Bool"
+    CHOICE = "choice", "Choice"
+    CHOICE_LIST = "choice_list", "ChoiceList"
     DATE = "date", "Date"
     INTEGER = "integer", "Int"
     NUMERIC = "numeric", "Numeric"

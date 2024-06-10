@@ -7,12 +7,16 @@ from main.grist import (
 
 
 def test_map_from_project_payload_object(project_payload_object):
-    assert map_from_project_payload_object(obj=project_payload_object) == {"name": "Pôle Santé"}
+    assert map_from_project_payload_object(obj=project_payload_object) == {
+        "name": "Pôle Santé",
+        "context": "Le projet consiste à créer un pôle santé",
+    }
 
 
 def test_map_from_survey_answer_payload_object(survey_answer_payload_object):
     assert map_from_survey_answer_payload_object(obj=survey_answer_payload_object) == {
         "topics": "Commerce rural,Citoyenneté / Participation de la population à la vie locale,"
         "Transition écologique et biodiversité,"
-        "Transition énergétique"
+        "Transition énergétique",
+        "topics_comment": "Mon commentaire sur les thématiques",
     }
