@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from django.conf import settings
 from httpx import Auth, Client, Request, Response
 
@@ -55,15 +57,25 @@ def raise_on_4xx_5xx(response: Response):
     response.raise_for_status()
 
 
-class RecocoApiClient(Client):
+class RecocoApiClient:
+    _client: Client
+
     def __init__(self, *args, **kwargs):
-        super().__init__(
+        self._client = Client(
             auth=RecocoApiAuth(),
             base_url=settings.RECOCO_API_URL,
             event_hooks={"response": [raise_on_4xx_5xx]},
             **kwargs,
         )
 
-    def get_projects(self) -> dict:
-        response = self.get("/projects/")
+    def get_projects(self) -> dict[str, Any]:
+        response = self._client.get("/projects/")
+        return response.json()
+
+    def get_survey_sessions(self, project_id: int) -> dict[str, Any]:
+        response = self._client.get(f"/survey/sessions/?project_id={project_id}")
+        return response.json()
+
+    def get_survey_session_answers(self, session_id: int) -> dict[str, Any]:
+        response = self._client.get(f"/survey/sessions/{session_id}/answers/")
         return response.json()

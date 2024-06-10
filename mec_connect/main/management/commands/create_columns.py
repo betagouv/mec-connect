@@ -19,34 +19,34 @@ columns_spec = {
     },
     "topics": {
         "label": "Thématiques",
-        "type": GristColumnType.TEXT,
+        "type": GristColumnType.CHOICE_LIST,
     },
-    "additions": {
-        "label": "Compléments",
-        "type": GristColumnType.TEXT,
-    },
-    "details": {
-        "label": "Si autre, précisez",
+    "topics_comment": {
+        "label": "Commentaire thématiques",
         "type": GristColumnType.TEXT,
     },
     "perimeter": {
         "label": "Périmètre",
+        "type": GristColumnType.CHOICE_LIST,
+    },
+    "perimeter_comment": {
+        "label": "Commentaire périmètre",
         "type": GristColumnType.TEXT,
     },
     "diagnostic_anct": {
         "label": "Diagnostic ANCT",
         "type": GristColumnType.TEXT,
     },
-    "attachment": {
-        "label": "Pièces jointes",
-        "type": GristColumnType.TEXT,
-    },
     "diagnostic_is_shared": {
         "label": "Le diagnostic a-t-il été partagé à la commune ?",
-        "type": GristColumnType.BOOLEAN,
+        "type": GristColumnType.BOOL,
     },
     "maturity": {
         "label": "Niveau de maturité",
+        "type": GristColumnType.CHOICE_LIST,
+    },
+    "maturity__comment": {
+        "label": "Commentaire niveau de maturité",
         "type": GristColumnType.TEXT,
     },
     "ownership": {
@@ -63,18 +63,10 @@ columns_spec = {
     },
     "budget": {
         "label": "Budget prévisionnel",
-        "type": GristColumnType.INTEGER,
+        "type": GristColumnType.NUMERIC,
     },
     "budget_attachment": {
         "label": "PJ Budget prévisionnel",
-        "type": GristColumnType.TEXT,
-    },
-    "final_budget": {
-        "label": "Budget définitif",
-        "type": GristColumnType.INTEGER,
-    },
-    "final_budget_attachment": {
-        "label": "PJ Budget définitif",
         "type": GristColumnType.TEXT,
     },
     "forecast_financing_plan": {
@@ -97,12 +89,20 @@ columns_spec = {
         "label": "Calendrier",
         "type": GristColumnType.TEXT,
     },
+    "calendar_attachment": {
+        "label": "Pièce jointe calendrier",
+        "type": GristColumnType.TEXT,
+    },
     "administrative_procedures": {
         "label": "Procédures administratives",
         "type": GristColumnType.TEXT,
     },
     "dependencies": {
         "label": "Liens avec d'autres programmes et contrats",
+        "type": GristColumnType.CHOICE_LIST,
+    },
+    "dependencies_comment": {
+        "label": "Commentaire liens avec d'autres programmes et contrats",
         "type": GristColumnType.TEXT,
     },
     "evaluation_indicator": {
@@ -112,14 +112,6 @@ columns_spec = {
     "ecological_transition_compass": {
         "label": "Boussole de transition ecologique",
         "type": GristColumnType.TEXT,
-    },
-    "verdict": {
-        "label": "Verdict",
-        "type": GristColumnType.TEXT,
-    },
-    "grant_amount": {
-        "label": "Montant de subvention",
-        "type": GristColumnType.INTEGER,
     },
 }
 

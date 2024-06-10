@@ -91,14 +91,13 @@ class GristConfig(BaseModel):
         verbose_name_plural = "Grist configurations"
 
     @property
-    def formatted_table_columns(self) -> list[dict[str, Any]]:
-        # TODO: sort
+    def table_columns(self) -> list[dict[str, Any]]:
         return [
             {
                 "id": col_config.grist_column.col_id,
                 "fields": {
                     "label": col_config.grist_column.label,
-                    # "type": col.type,
+                    "type": GristColumnType(col_config.grist_column.type).label,
                 },
             }
             for col_config in self.column_configs.select_related("grist_column")
@@ -117,7 +116,7 @@ class GristColumn(BaseModel):
         verbose_name_plural = "Grist columns"
 
     def __str__(self) -> str:
-        return self.col_id
+        return self.label
 
 
 class GritColumnConfig(BaseModel):
