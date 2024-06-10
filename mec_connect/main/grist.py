@@ -16,11 +16,17 @@ class GristApiClient:
     api_key: str
     api_base_url: str
     doc_id: str
+    client: Client
 
     def __init__(self, api_key: str, api_base_url: str, doc_id: str):
         self.api_key = api_key
         self.api_base_url = api_base_url
         self.doc_id = doc_id
+        self.client = Client(
+            headers=self.headers,
+            base_url=self.api_base_url,
+            event_hooks={"response": [raise_on_4xx_5xx]},
+        )
 
     @classmethod
     def from_config(cls, config: GristConfig) -> Self:
@@ -34,49 +40,37 @@ class GristApiClient:
     def headers(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self.api_key}"}
 
-    def client_factory(self) -> Client:
-        return Client(
-            headers=self.headers,
-            base_url=self.api_base_url,
-            event_hooks={"response": [raise_on_4xx_5xx]},
-        )
-
     def get_tables(self) -> dict[str, Any]:
-        with self.client_factory() as client:
-            resp = client.get(f"docs/{self.doc_id}/tables/")
-            return resp.json()
+        resp = self.client.get(f"docs/{self.doc_id}/tables/")
+        return resp.json()
 
     def create_table(self, table_id: str, columns: dict[str, Any]) -> dict[str, Any]:
-        with self.client_factory() as client:
-            resp = client.post(
-                f"docs/{self.doc_id}/tables/",
-                json={"tables": [{"id": table_id, "columns": columns}]},
-            )
-            return resp.json()
+        resp = self.client.post(
+            f"docs/{self.doc_id}/tables/",
+            json={"tables": [{"id": table_id, "columns": columns}]},
+        )
+        return resp.json()
 
     def get_records(self, table_id: str, filter: dict[str, Any]) -> dict[str, Any]:
-        with self.client_factory() as client:
-            resp = client.get(
-                f"docs/{self.doc_id}/tables/{table_id}/records/",
-                params={"filter": json.dumps(filter)},
-            )
-            return resp.json()
+        resp = self.client.get(
+            f"docs/{self.doc_id}/tables/{table_id}/records/",
+            params={"filter": json.dumps(filter)},
+        )
+        return resp.json()
 
     def create_records(self, table_id: str, records: list[dict[str, Any]]) -> dict[str, Any]:
-        with self.client_factory() as client:
-            resp = client.post(
-                f"docs/{self.doc_id}/tables/{table_id}/records/",
-                json={"records": [{"fields": r} for r in records]},
-            )
-            return resp.json()
+        resp = self.client.post(
+            f"docs/{self.doc_id}/tables/{table_id}/records/",
+            json={"records": [{"fields": r} for r in records]},
+        )
+        return resp.json()
 
     def update_records(self, table_id: str, records: dict[str, dict[str, Any]]) -> dict[str, Any]:
-        with self.client_factory() as client:
-            resp = client.patch(
-                f"docs/{self.doc_id}/tables/{table_id}/records/",
-                json={"records": [{"id": k, "fields": v} for k, v in records.items()]},
-            )
-            return resp.json()
+        resp = self.client.patch(
+            f"docs/{self.doc_id}/tables/{table_id}/records/",
+            json={"records": [{"id": k, "fields": v} for k, v in records.items()]},
+        )
+        return resp.json()
 
 
 def map_from_project_payload_object(
