@@ -18,9 +18,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v4
 
       - name: Deploy to Scalingo (staging)
         uses: kolok/deploy-to-scalingo@v1
