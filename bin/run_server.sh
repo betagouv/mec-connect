@@ -1,3 +1,3 @@
 #!/bin/bash
 
-gunicorn --timeout 300 --chdir core mec_connect.wsgi --log-file -
+gunicorn --timeout 300 mec_connect.wsgi:application --log-file -
