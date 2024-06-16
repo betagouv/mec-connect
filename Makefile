@@ -4,9 +4,10 @@ SHELL := /bin/bash
 
 runserver:
 	@python manage.py runserver 0.0.0.0:8002
+	# @bash bin/run_server.sh
 
 runworker:
-	@celery -A mec_connect.worker worker -l info --concurrency=1
+	@bash bin/run_worker.sh
 
 precommit:
 	@pre-commit run --all-files
