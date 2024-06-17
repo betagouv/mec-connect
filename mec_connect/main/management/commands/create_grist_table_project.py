@@ -1,13 +1,9 @@
 from __future__ import annotations
 
 from django.core.management.base import BaseCommand, CommandParser
-from main.grist import (
-    GristApiClient,
-    map_from_project_payload_object,
-    map_from_survey_answer_payload_object,
-)
+from main.grist import grist_table_exists
 from main.models import GristConfig
-from main.recoco import RecocoApiClient
+from main.tasks import populate_grist_table
 
 
 class Command(BaseCommand):
@@ -21,6 +17,12 @@ class Command(BaseCommand):
             nargs="?",
         )
 
+        parser.add_argument(
+            "--async",
+            action="store_true",
+            help="Do it asynchronously (triggering a Celery task)",
+        )
+
     def handle(self, *args, **options):
         try:
             config: GristConfig = GristConfig.objects.get(id=options["grist_config"])
@@ -32,48 +34,23 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR("Config is not enabled"))
             return
 
-        grist_client = GristApiClient.from_config(config)
-
-        response = grist_client.get_tables()
-        for table in response["tables"]:
-            if table["id"] == config.table_id:
-                self.stdout.write(
-                    self.style.ERROR(f"Table {config.table_id} already exists, aborting.")
-                )
-                return
-
-        self.stdout.write(f"Creating table {config.table_id} in Grist")
-        grist_client.create_table(
-            table_id=config.table_id,
-            columns=config.table_columns,
-        )
-
-        grist_table_headers = list(
-            config.column_configs.values_list("grist_column__col_id", flat=True)
-        )
-
-        recoco_client = RecocoApiClient()
-
-        for project in recoco_client.get_projects():
-            self.stdout.write(f"Creating project {project['name']} in Grist")
-
-            row_data = map_from_project_payload_object(
-                obj=project, available_keys=grist_table_headers
+        self.stdout.write(f"Processing Grist config {config.id}")
+        if grist_table_exists(config):
+            self.stdout.write(
+                self.style.ERROR(f"Table {config.table_id} already exists, aborting.")
             )
+            return
 
-            sessions = recoco_client.get_survey_sessions(project_id=project["id"])
-            if sessions["count"] > 0:
-                answers = recoco_client.get_survey_session_answers(
-                    session_id=sessions["results"][0]["id"]
-                )
-                for answer in answers["results"]:
-                    row_data.update(
-                        map_from_survey_answer_payload_object(
-                            obj=answer, available_keys=grist_table_headers
-                        )
-                    )
+        self.stdout.write(f" >> URL: {config.api_base_url}")
+        self.stdout.write(f" >> doc ID: {config.doc_id}")
+        self.stdout.write(f" >> table ID: {config.table_id}")
 
-            grist_client.create_records(
-                table_id=config.table_id,
-                records=[{"object_id": project["id"]} | row_data],
-            )
+        self.stdout.write("\nStart processing ...")
+
+        if options["async"]:
+            populate_grist_table.delay(config.id)
+            self.stdout.write(self.style.SUCCESS("Celery task triggered!"))
+            return
+
+        populate_grist_table.s(config.id)()
+        self.stdout.write(self.style.SUCCESS("Done!"))

@@ -177,3 +177,12 @@ def map_from_survey_answer_payload_object(
         return data
 
     return {k: data[k] for k in available_keys if k in data}
+
+
+def grist_table_exists(config: GristConfig) -> bool:
+    grist_client = GristApiClient.from_config(config)
+    response = grist_client.get_tables()
+    for table in response["tables"]:
+        if table["id"] == config.table_id:
+            return True
+    return False

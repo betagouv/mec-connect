@@ -4,6 +4,7 @@ from typing import assert_never
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from main.recoco import RecocoApiClient
 
 from .choices import ObjectType, WebhookEventStatus
 from .grist import (
@@ -92,3 +93,39 @@ def process_survey_answer_event(event: WebhookEvent):
                     records[0]["id"]: row_data,
                 },
             )
+
+
+@shared_task
+def populate_grist_table(config_id: str):
+    config = GristConfig.objects.get(id=config_id)
+    grist_table_columns = config.table_columns
+    grist_table_headers = config.table_headers
+
+    grist_client = GristApiClient.from_config(config)
+
+    grist_client.create_table(
+        table_id=config.table_id,
+        columns=grist_table_columns,
+    )
+
+    recoco_client = RecocoApiClient()
+
+    for project in recoco_client.get_projects():
+        row_data = map_from_project_payload_object(obj=project, available_keys=grist_table_headers)
+
+        sessions = recoco_client.get_survey_sessions(project_id=project["id"])
+        if sessions["count"] > 0:
+            answers = recoco_client.get_survey_session_answers(
+                session_id=sessions["results"][0]["id"]
+            )
+            for answer in answers["results"]:
+                row_data.update(
+                    map_from_survey_answer_payload_object(
+                        obj=answer, available_keys=grist_table_headers
+                    )
+                )
+
+        grist_client.create_records(
+            table_id=config.table_id,
+            records=[{"object_id": project["id"]} | row_data],
+        )
