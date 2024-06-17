@@ -110,15 +110,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 #
-# Storages
-#
-STORAGES = {
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
-
-#
 # Celery Configuration Options
 # https://docs.celeryproject.org/en/stable/userguide/configuration.html
 #
