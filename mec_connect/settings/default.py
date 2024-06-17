@@ -20,9 +20,13 @@ DEBUG = env.bool("DEBUG", False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["*"])
 ROOT_URLCONF = "mec_connect.urls"
 WSGI_APPLICATION = "mec_connect.wsgi.application"
-STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "static"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+#
+# Static files
+#
+STATIC_ROOT = BASE_DIR / "static"
+STATIC_URL = "static/"
 
 #
 # Internationalization
@@ -44,7 +48,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_extensions",
-    "django_json_widget",
     "main",
 ]
 

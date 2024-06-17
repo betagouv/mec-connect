@@ -2,9 +2,7 @@ from __future__ import annotations
 
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.db.models import JSONField
 from django.utils.translation import gettext_lazy as _
-from django_json_widget.widgets import JSONEditorWidget
 
 from .models import GristColumn, GristConfig, GritColumnConfig, User, WebhookEvent
 
@@ -58,10 +56,6 @@ class GristConfigAdmin(admin.ModelAdmin):
     )
 
     list_filter = ("enabled",)
-
-    formfield_overrides = {
-        JSONField: {"widget": JSONEditorWidget},
-    }
 
     inlines = (GristColumnInline,)
 
