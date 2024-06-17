@@ -23,4 +23,4 @@ admin:
 
 freeze-reqs:
 	@poetry lock --no-update
-	@poetry export --without-hashes --without-urls | awk '{ print $1 }' FS=';' > requirements.txt
+	@poetry export --without-hashes --without-urls | awk '{ print $$1 }' FS=';' > requirements.txt
