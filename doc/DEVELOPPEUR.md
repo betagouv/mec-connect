@@ -1,8 +1,8 @@
 # DEVELOPPEMENT
 
-Cette documentation décrit toutes les étapes nécessaires à l'intallation et au développement de l'applciation MEC-connect.
+Cette documentation décrit toutes les étapes nécessaires à l'intallation et au développement de l'application MEC-connect.
 
-Les règles et standards de codage y sont décrits
+Les règles et standards de codage y sont décrits.
 
 ## Installation
 
@@ -72,4 +72,13 @@ Pour installer les git hook de pre-commit, installer le package precommit et l'i
 ```sh
 pip install pre-commit
 pre-commit install
+```
+
+### Ajouter une dépendance
+
+Pour ajout une nouvelle dépendance, utiliser poetry, puis regénérer le fichier `requirements.txt`
+
+```sh
+poetry add <any_dep>
+make freeze-reqs
 ```
