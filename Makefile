@@ -3,8 +3,7 @@
 SHELL := /bin/bash
 
 runserver:
-	@python manage.py runserver 0.0.0.0:8002
-	# @bash bin/run_server.sh
+	@bash bin/run_server.sh dev
 
 runworker:
 	@bash bin/run_worker.sh
@@ -24,3 +23,9 @@ admin:
 freeze-reqs:
 	@poetry lock --no-update
 	@poetry export --without-hashes --without-urls | awk '{ print $$1 }' FS=';' > requirements.txt
+
+scalingo-prod-shell:
+	@scalingo --app mec-connect-prod --region osc-secnum-fr1 run bash
+
+scalingo-staging-shell:
+	@scalingo --app mec-connect-staging --region osc-fr1 run bash
