@@ -145,6 +145,7 @@ def survey_answer_payload_object():
             "id": 85,
             "text": "Thématique(s)",
             "text_short": "Thématique(s)",
+            "slug": "thematiques-2",
             "is_multiple": True,
             "choices": [
                 {"id": 258, "value": "13", "text": "Commerce rural"},
