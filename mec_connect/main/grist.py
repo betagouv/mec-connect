@@ -97,79 +97,55 @@ def map_from_survey_answer_payload_object(
 ) -> dict[str, Any]:
     data = {}
 
-    # TODO: need a question slug instead of using text_short
-    question_slug = obj["question"]["text_short"]
-
     def _format_choices(_obj):
         return ",".join([c["text"] for c in _obj["choices"]])
 
-    _mapping = {
-        "Autres programmes et contrats": "dependencies",
-        "Boussole": "ecological_transition_compass",
-        "Budget prévisionnel": "budget",
-        "Calendrier": "calendar",
-        "Description de l'action": "action",
-        "Diagnostic ANCT": "diagnostic_anct",
-        "Partagé à la commune ?": "diagnostic_is_shared",
-        "Indicateurs de suivi et d'éval": "evaluation_indicator",
-        "Maturité du projet": "maturity",
-        "Partenaires": "partners",
-        "Périmètre": "perimeter",
-        "Plan de financement prévisionnel": "forecast_financing_plan",
-        "Plan de financement définitif": "final_financing_plan",
-        "Plan de financement": "financing_plan",
-        "Procédures administratives": "administrative_procedures",
-        "Thématique(s)": "topics",
-        "Maître d'ouvrage": "ownership",
-    }
-
-    match question_slug:
-        case "Thématique(s)" | "Autres programmes et contrats" | "Périmètre" | "Maturité du projet":
+    match question_slug := obj["question"]["slug"]:
+        case "thematiques-2" | "autres-programmes-et-contrats" | "perimetre" | "maturite-du-projet":
             data.update(
                 {
-                    _mapping[question_slug]: _format_choices(obj),
-                    f"{_mapping[question_slug]}_comment": obj["comment"],
+                    map_question_slugs_columns[question_slug]: _format_choices(obj),
+                    f"{map_question_slugs_columns[question_slug]}_comment": obj["comment"],
                 }
             )
 
-        case "Budget prévisionnel":
+        case "budget-previsionnel":
             try:
-                data.update({_mapping[question_slug]: float(obj["comment"])})
+                data.update({map_question_slugs_columns[question_slug]: float(obj["comment"])})
             except ValueError:
                 pass
 
         case (
-            "Diagnostic ANCT"
-            | "Calendrier"
-            | "Plan de financement définitif"
-            | "Plan de financement prévisionnel"
+            "diagnostic-anct"
+            | "calendrier"
+            | "plan-de-financement-definitif"
+            | "plan-de-financement-previsionnel"
         ):
             data.update(
                 {
-                    _mapping[question_slug]: obj["comment"],
-                    f"{_mapping[question_slug]}__attachment": obj["attachment"],
+                    map_question_slugs_columns[question_slug]: obj["comment"],
+                    f"{map_question_slugs_columns[question_slug]}__attachment": obj["attachment"],
                 }
             )
 
-        case "Partagé à la commune ?":
+        case "partage-a-la-commune":
             data.update(
                 {
-                    _mapping[question_slug]: obj["values"][0] == "Oui",
+                    map_question_slugs_columns[question_slug]: obj["values"][0] == "Oui",
                 }
             )
 
         case (
-            "Boussole"
-            | "Description de l'action"
-            | "Indicateurs de suivi et d'éval"
-            | "Maturité du projet"
-            | "Partenaires"
-            | "Procédures administratives"
-            | "Plan de financement"
-            | "Plan de financement définitif"
-            | "Maître d'ouvrage"
+            "boussole"
+            | "description-de-laction"
+            | "indicateurs-de-suivi-et-deval"
+            | "maturite-du-projet"
+            | "partenaires-2"
+            | "procedures-administratives"
+            | "plan-de-financement-definitif"
+            | "maitre-douvrage-2"
         ):
-            data.update({_mapping[question_slug]: obj["comment"]})
+            data.update({map_question_slugs_columns[question_slug]: obj["comment"]})
 
         case _:
             logger.info(f"Unhandled question: {obj['question']['text_short']}")
@@ -187,6 +163,26 @@ def grist_table_exists(config: GristConfig) -> bool:
         if table["id"] == config.table_id:
             return True
     return False
+
+
+map_question_slugs_columns = {
+    "autres-programmes-et-contrats": "dependencies",
+    "boussole": "ecological_transition_compass",
+    "budget-previsionnel": "budget",
+    "calendrier": "calendar",
+    "description-de-laction": "action",
+    "diagnostic-anct": "diagnostic_anct",
+    "indicateurs-de-suivi-et-deval": "evaluation_indicator",
+    "maitre-douvrage-2": "ownership",
+    "maturite-du-projet": "maturity",
+    "partage-a-la-commune": "diagnostic_is_shared",
+    "partenaires-2": "partners",
+    "perimetre": "perimeter",
+    "plan-de-financement-definitif": "final_financing_plan",
+    "plan-de-financement-previsionnel": "forecast_financing_plan",
+    "procedures-administratives": "administrative_procedures",
+    "thematiques-2": "topics",
+}
 
 
 default_columns_spec = {
@@ -211,19 +207,19 @@ default_columns_spec = {
         "type": GristColumnType.TEXT,
     },
     "perimeter": {
-        "label": "Périmètre",
+        "label": "perimetre",
         "type": GristColumnType.CHOICE_LIST,
     },
     "perimeter_comment": {
-        "label": "Commentaire périmètre",
+        "label": "Commentaire perimetre",
         "type": GristColumnType.TEXT,
     },
     "diagnostic_anct": {
-        "label": "Diagnostic ANCT",
+        "label": "diagnostic-anct",
         "type": GristColumnType.TEXT,
     },
     "diagnostic_is_shared": {
-        "label": "Le diagnostic a-t-il été partagé à la commune ?",
+        "label": "Le diagnostic a-t-il été partage-a-la-commune",
         "type": GristColumnType.BOOL,
     },
     "maturity": {
@@ -235,7 +231,7 @@ default_columns_spec = {
         "type": GristColumnType.TEXT,
     },
     "ownership": {
-        "label": "Maître d'ouvrage",
+        "label": "maitre-douvrage-2",
         "type": GristColumnType.TEXT,
     },
     "action": {
@@ -243,19 +239,19 @@ default_columns_spec = {
         "type": GristColumnType.TEXT,
     },
     "partners": {
-        "label": "Partenaires",
+        "label": "partenaires-2",
         "type": GristColumnType.TEXT,
     },
     "budget": {
-        "label": "Budget prévisionnel",
+        "label": "budget-previsionnel",
         "type": GristColumnType.NUMERIC,
     },
     "budget_attachment": {
-        "label": "PJ Budget prévisionnel",
+        "label": "PJ budget-previsionnel",
         "type": GristColumnType.TEXT,
     },
     "forecast_financing_plan": {
-        "label": "Plan de financement prévisionnel",
+        "label": "plan-de-financement-previsionnel",
         "type": GristColumnType.TEXT,
     },
     "forecast_financing_plan_attachment": {
@@ -263,7 +259,7 @@ default_columns_spec = {
         "type": GristColumnType.TEXT,
     },
     "final_financing_plan": {
-        "label": "Plan de financement définitif",
+        "label": "plan-de-financement-definitif",
         "type": GristColumnType.TEXT,
     },
     "final_financing_plan_attachment": {
@@ -271,7 +267,7 @@ default_columns_spec = {
         "type": GristColumnType.TEXT,
     },
     "calendar": {
-        "label": "Calendrier",
+        "label": "calendrier",
         "type": GristColumnType.TEXT,
     },
     "calendar_attachment": {
@@ -279,15 +275,15 @@ default_columns_spec = {
         "type": GristColumnType.TEXT,
     },
     "administrative_procedures": {
-        "label": "Procédures administratives",
+        "label": "procedures-administratives",
         "type": GristColumnType.TEXT,
     },
     "dependencies": {
-        "label": "Liens avec d'autres programmes et contrats",
+        "label": "Liens avec d'autres-programmes-et-contrats",
         "type": GristColumnType.CHOICE_LIST,
     },
     "dependencies_comment": {
-        "label": "Commentaire liens avec d'autres programmes et contrats",
+        "label": "Commentaire liens avec d'autres-programmes-et-contrats",
         "type": GristColumnType.TEXT,
     },
     "evaluation_indicator": {
