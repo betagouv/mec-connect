@@ -5,7 +5,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
-from main.grist import grist_table_exists
+from main.grist import default_columns_spec, grist_table_exists
 from main.tasks import populate_grist_table
 
 from .models import GristColumn, GristConfig, GritColumnConfig, User, WebhookEvent
@@ -63,14 +63,17 @@ class GristConfigAdmin(admin.ModelAdmin):
 
     inlines = (GristColumnInline,)
 
-    actions = ("setup_grist_table",)
+    actions = (
+        "setup_grist_table",
+        "reset_columns",
+    )
 
     @admin.action(description="Créer la table Grist des configurations sélectionnées")
     def setup_grist_table(self, request: HttpRequest, queryset: QuerySet[GristConfig]):
         for config in queryset:
-            self._handle_config(request, config)
+            self._setup_grist_table_from_config(request, config)
 
-    def _handle_config(self, request: HttpRequest, config: GristConfig):
+    def _setup_grist_table_from_config(self, request: HttpRequest, config: GristConfig):
         if not config.enabled:
             self.message_user(
                 request,
@@ -91,6 +94,31 @@ class GristConfigAdmin(admin.ModelAdmin):
         self.message_user(
             request,
             f"Configuration {config.id}: une tâche a été lancée.",
+            messages.SUCCESS,
+        )
+
+    @admin.action(
+        description="Remettre les colonnes par défaut pour les confugurations sélectionnées"
+    )
+    def reset_columns(self, request: HttpRequest, queryset: QuerySet[GristConfig]):
+        for config in queryset:
+            self._reset_columns_from_config(request, config)
+
+    def _reset_columns_from_config(self, request: HttpRequest, config: GristConfig):
+        GritColumnConfig.objects.filter(grist_config=config).delete()
+
+        position = 0
+        for col_id in default_columns_spec.keys():
+            GritColumnConfig.objects.get_or_create(
+                grist_column=GristColumn.objects.get(col_id=col_id),
+                grist_config=config,
+                defaults={"position": position},
+            )
+            position += 10
+
+        self.message_user(
+            request,
+            f"Configuration {config.id}: reset columns.",
             messages.SUCCESS,
         )
 
