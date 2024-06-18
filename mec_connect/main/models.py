@@ -76,11 +76,6 @@ class GristConfig(BaseModel):
     table_id = models.CharField(max_length=32)
     enabled = models.BooleanField(default=True)
 
-    # DEPRECATED
-    object_type = models.CharField(
-        max_length=32, choices=ObjectType.choices, default=ObjectType.PROJECT
-    )
-
     api_base_url = models.CharField(max_length=128)
     api_key = models.CharField(max_length=64)
 
