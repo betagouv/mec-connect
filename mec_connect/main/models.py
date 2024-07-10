@@ -82,8 +82,8 @@ class GristConfig(BaseModel):
     class Meta:
         db_table = "gristconfig"
         ordering = ("-created",)
-        verbose_name = "Grist configuration"
-        verbose_name_plural = "Grist configurations"
+        verbose_name = "Configuration Grist"
+        verbose_name_plural = "Configurations Grist"
 
     @property
     def table_columns(self) -> list[dict[str, Any]]:
