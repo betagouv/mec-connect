@@ -41,9 +41,11 @@ def process_project_event(event: WebhookEvent):
     for grist_config in GristConfig.objects.filter(enabled=True):
         client = GristApiClient.from_config(grist_config)
 
+        project_id = int(event.object_id)
+
         resp = client.get_records(
             table_id=grist_config.table_id,
-            filter={"object_id": [str(event.object_id)]},
+            filter={"object_id": [project_id]},
         )
 
         row_data = map_from_project_payload_object(
@@ -72,7 +74,7 @@ def process_survey_answer_event(event: WebhookEvent):
     for grist_config in GristConfig.objects.filter(enabled=True):
         client = GristApiClient.from_config(grist_config)
 
-        project_id = str(event.object_data.get("project"))
+        project_id = int(event.object_data.get("project"))
 
         resp = client.get_records(
             table_id=grist_config.table_id,

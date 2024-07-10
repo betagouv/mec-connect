@@ -98,7 +98,7 @@ class GristConfigAdmin(admin.ModelAdmin):
         )
 
     @admin.action(
-        description="Remettre les colonnes par défaut pour les confugurations sélectionnées"
+        description="Remettre les colonnes par défaut pour les configurations sélectionnées"
     )
     def reset_columns(self, request: HttpRequest, queryset: QuerySet[GristConfig]):
         for config in queryset:

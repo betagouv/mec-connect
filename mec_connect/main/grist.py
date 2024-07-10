@@ -188,7 +188,7 @@ map_question_slugs_columns = {
 default_columns_spec = {
     "object_id": {
         "label": "ID",
-        "type": GristColumnType.TEXT,
+        "type": GristColumnType.INTEGER,
     },
     "name": {
         "label": "Nom du projet",
