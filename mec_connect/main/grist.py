@@ -84,6 +84,7 @@ def map_from_project_payload_object(
     data = {
         "name": obj["name"],
         "context": obj["description"],
+        "tags": ",".join(obj["tags"]),
     }
 
     if available_keys is None:
@@ -197,6 +198,10 @@ default_columns_spec = {
     "context": {
         "label": "Contexte",
         "type": GristColumnType.TEXT,
+    },
+    "tags": {
+        "label": "Tags",
+        "type": GristColumnType.CHOICE_LIST,
     },
     "topics": {
         "label": "Thématiques",

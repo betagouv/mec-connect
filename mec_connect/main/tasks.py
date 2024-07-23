@@ -26,7 +26,7 @@ def process_webhook_event(event_id: int):
         return
 
     match event.object_type:
-        case ObjectType.PROJECT:
+        case ObjectType.PROJECT | ObjectType.TAGGEDITEM:
             process_project_event(event=event)
         case ObjectType.SURVEY_ANSWER:
             process_survey_answer_event(event=event)

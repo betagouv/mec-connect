@@ -13,6 +13,7 @@ class WebhookEventStatus(models.TextChoices):
 class ObjectType(models.TextChoices):
     PROJECT = "projects.Project", "Project"
     SURVEY_ANSWER = "survey.Answer", "Answer"
+    TAGGEDITEM = "taggit.TaggedItem", "TaggedItem"
 
 
 class GristColumnType(models.TextChoices):
