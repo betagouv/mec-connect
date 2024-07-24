@@ -26,7 +26,7 @@ def process_webhook_event(event_id: int):
         return
 
     match event.object_type:
-        case ObjectType.PROJECT:
+        case ObjectType.PROJECT | ObjectType.TAGGEDITEM:
             process_project_event(event=event)
         case ObjectType.SURVEY_ANSWER:
             process_survey_answer_event(event=event)
@@ -66,7 +66,7 @@ def process_project_event(event: WebhookEvent):
 
         client.create_records(
             table_id=grist_config.table_id,
-            records=[{"object_id": event.object_id} | row_data],
+            records=[{"object_id": project_id} | row_data],
         )
 
 
