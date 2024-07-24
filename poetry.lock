@@ -1021,6 +1021,7 @@ files = [
 ]
 
 [package.dependencies]
+celery = {version = ">=3", optional = true, markers = "extra == \"celery\""}
 certifi = "*"
 django = {version = ">=1.8", optional = true, markers = "extra == \"django\""}
 urllib3 = ">=1.26.11"
@@ -1209,4 +1210,4 @@ brotli = ["brotli"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "3fe061a174dd9eb8576692c4fde4c199b0d0ae78efd579e83158d41c22ecfd0e"
+content-hash = "e68a09726a1ef365b18142cb75cf61953846e9f39c9b53b8e77a5329a63cfb44"
