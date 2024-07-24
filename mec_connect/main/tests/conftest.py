@@ -123,15 +123,15 @@ def project_payload_object():
             "latitude": 47.1202035218,
             "longitude": -1.34924956417,
         },
+        "location": "rue des hirondelles",
         "recommendation_count": 0,
         "public_message_count": 0,
         "private_message_count": 0,
         "topics": [
             {"name": "Financement"},
-            {
-                "name": "Etudes",
-            },
+            {"name": "Etudes"},
         ],
+        "tags": ["tag1", "tag2"],
     }
 
 
