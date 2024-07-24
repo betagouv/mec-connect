@@ -9,7 +9,12 @@ admin.site.site_header = f"MEC-Connect administration ({settings.ENVIRONMENT})"
 admin.site.index_title = "MEC-Connect administration"
 
 
+def trigger_error(request):
+    return 1 / 0
+
+
 urlpatterns = [
     path("", include("main.urls")),
     path("admin/", admin.site.urls),
+    path("sentry-debug/", trigger_error),
 ]
