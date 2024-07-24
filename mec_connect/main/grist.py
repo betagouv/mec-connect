@@ -84,7 +84,14 @@ def map_from_project_payload_object(
     data = {
         "name": obj["name"],
         "context": obj["description"],
-        "tags": ",".join(obj["tags"]),
+        "city": obj["commune"]["name"],
+        "postal_code": int(obj["commune"]["postal"]),
+        "insee": int(obj["commune"]["insee"]),
+        "department": obj["commune"]["department"]["name"],
+        "department_code": int(obj["commune"]["department"]["code"]),
+        # FIXME: remove the "if" condition once the API is fixed
+        "location": obj["location"] if "location" in obj else None,
+        "tags": ",".join(obj["tags"]) if "tags" in obj else None,
     }
 
     if available_keys is None:
@@ -125,7 +132,7 @@ def map_from_survey_answer_payload_object(
             data.update(
                 {
                     map_question_slugs_columns[question_slug]: obj["comment"],
-                    f"{map_question_slugs_columns[question_slug]}__attachment": obj["attachment"],
+                    f"{map_question_slugs_columns[question_slug]}_attachment": obj["attachment"],
                 }
             )
 
@@ -200,7 +207,7 @@ default_columns_spec = {
         "type": GristColumnType.TEXT,
     },
     "tags": {
-        "label": "Tags",
+        "label": "Etiquettes",
         "type": GristColumnType.CHOICE_LIST,
     },
     "topics": {
@@ -211,20 +218,48 @@ default_columns_spec = {
         "label": "Commentaire thématiques",
         "type": GristColumnType.TEXT,
     },
+    "city": {
+        "label": "Commune",
+        "type": GristColumnType.TEXT,
+    },
+    "postal_code": {
+        "label": "Code postal",
+        "type": GristColumnType.INTEGER,
+    },
+    "insee": {
+        "label": "Code Insee",
+        "type": GristColumnType.INTEGER,
+    },
+    "department": {
+        "label": "Département",
+        "type": GristColumnType.TEXT,
+    },
+    "department_code": {
+        "label": "Code département",
+        "type": GristColumnType.INTEGER,
+    },
+    "location": {
+        "label": "Lieu",
+        "type": GristColumnType.TEXT,
+    },
     "perimeter": {
-        "label": "perimetre",
+        "label": "Périmètre",
         "type": GristColumnType.CHOICE_LIST,
     },
     "perimeter_comment": {
-        "label": "Commentaire perimetre",
+        "label": "Commentaire périmètre",
         "type": GristColumnType.TEXT,
     },
     "diagnostic_anct": {
-        "label": "diagnostic-anct",
+        "label": "Diagnostic ANCT",
+        "type": GristColumnType.TEXT,
+    },
+    "diagnostic_anct_attachment": {
+        "label": "PJ Diagnostic ANCT",
         "type": GristColumnType.TEXT,
     },
     "diagnostic_is_shared": {
-        "label": "Le diagnostic a-t-il été partage-a-la-commune",
+        "label": "Diagnostic partagé",
         "type": GristColumnType.BOOL,
     },
     "maturity": {
@@ -236,7 +271,7 @@ default_columns_spec = {
         "type": GristColumnType.TEXT,
     },
     "ownership": {
-        "label": "maitre-douvrage-2",
+        "label": "Maitre d'ouvrage",
         "type": GristColumnType.TEXT,
     },
     "action": {
@@ -244,51 +279,51 @@ default_columns_spec = {
         "type": GristColumnType.TEXT,
     },
     "partners": {
-        "label": "partenaires-2",
+        "label": "Partenaires",
         "type": GristColumnType.TEXT,
     },
     "budget": {
-        "label": "budget-previsionnel",
-        "type": GristColumnType.NUMERIC,
+        "label": "Budget prévisionnel",
+        "type": GristColumnType.TEXT,
     },
     "budget_attachment": {
-        "label": "PJ budget-previsionnel",
+        "label": "PJ budget prévisionnel",
         "type": GristColumnType.TEXT,
     },
     "forecast_financing_plan": {
-        "label": "plan-de-financement-previsionnel",
+        "label": "Plan de financement prévisionnel",
         "type": GristColumnType.TEXT,
     },
     "forecast_financing_plan_attachment": {
-        "label": "PJ Financement prévisionnel",
+        "label": "PJ financement prévisionnel",
         "type": GristColumnType.TEXT,
     },
     "final_financing_plan": {
-        "label": "plan-de-financement-definitif",
+        "label": "Plan de financement définitif",
         "type": GristColumnType.TEXT,
     },
     "final_financing_plan_attachment": {
-        "label": "PJ Financement définitif",
+        "label": "PJ financement définitif",
         "type": GristColumnType.TEXT,
     },
     "calendar": {
-        "label": "calendrier",
+        "label": "Calendrier",
         "type": GristColumnType.TEXT,
     },
     "calendar_attachment": {
-        "label": "Pièce jointe calendrier",
+        "label": "PJ calendrier",
         "type": GristColumnType.TEXT,
     },
     "administrative_procedures": {
-        "label": "procedures-administratives",
+        "label": "Procédures administratives",
         "type": GristColumnType.TEXT,
     },
     "dependencies": {
-        "label": "Liens avec d'autres-programmes-et-contrats",
+        "label": "Liens avec d'autres programmes et contrats",
         "type": GristColumnType.CHOICE_LIST,
     },
     "dependencies_comment": {
-        "label": "Commentaire liens avec d'autres-programmes-et-contrats",
+        "label": "Commentaire liens avec d'autres programmes et contrats",
         "type": GristColumnType.TEXT,
     },
     "evaluation_indicator": {
@@ -296,7 +331,7 @@ default_columns_spec = {
         "type": GristColumnType.TEXT,
     },
     "ecological_transition_compass": {
-        "label": "Boussole de transition ecologique",
+        "label": "Boussole de transition écologique",
         "type": GristColumnType.TEXT,
     },
 }

@@ -66,7 +66,7 @@ def process_project_event(event: WebhookEvent):
 
         client.create_records(
             table_id=grist_config.table_id,
-            records=[{"object_id": event.object_id} | row_data],
+            records=[{"object_id": project_id} | row_data],
         )
 
 
