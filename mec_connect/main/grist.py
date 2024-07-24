@@ -81,18 +81,22 @@ class GristApiClient:
 def map_from_project_payload_object(
     obj: dict[str, Any], available_keys: list[str] | None = None
 ) -> dict[str, Any]:
-    data = {
-        "name": obj["name"],
-        "context": obj["description"],
-        "city": obj["commune"]["name"],
-        "postal_code": int(obj["commune"]["postal"]),
-        "insee": int(obj["commune"]["insee"]),
-        "department": obj["commune"]["department"]["name"],
-        "department_code": int(obj["commune"]["department"]["code"]),
-        # FIXME: remove the "if" condition once the API is fixed
-        "location": obj["location"] if "location" in obj else None,
-        "tags": ",".join(obj["tags"]) if "tags" in obj else None,
-    }
+    try:
+        data = {
+            "name": obj["name"],
+            "context": obj["description"],
+            "city": obj["commune"]["name"],
+            "postal_code": int(obj["commune"]["postal"]),
+            "insee": int(obj["commune"]["insee"]),
+            "department": obj["commune"]["department"]["name"],
+            "department_code": int(obj["commune"]["department"]["code"]),
+            # FIXME: remove the "if" condition once the API is fixed
+            "location": obj["location"] if "location" in obj else None,
+            "tags": ",".join(obj["tags"]) if "tags" in obj else None,
+        }
+    except (KeyError, ValueError) as exc:
+        logger.error(f"Error while mapping project #{obj["id"]} payload object: {exc}")
+        return {}
 
     if available_keys is None:
         return data
