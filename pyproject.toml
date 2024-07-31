@@ -24,7 +24,7 @@ sentry-sdk = {version = "^2.11.0", extras = ["django", "celery"]}
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.4.7"
-pytest = "^8.2.2"
+pytest = "^8.3.2"
 pytest-django = "^4.8.0"
 pytest-xdist = "^3.6.1"
 ipython = "^8.25.0"
