@@ -4,15 +4,16 @@ from typing import assert_never
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from main.recoco import RecocoApiClient
 
 from .choices import ObjectType, WebhookEventStatus
-from .grist import (
-    GristApiClient,
-    map_from_project_payload_object,
-    map_from_survey_answer_payload_object,
-)
+from .clients import GristApiClient
 from .models import GristConfig, WebhookEvent
+from .services import (
+    fetch_projects_data,
+    process_project_event,
+    process_survey_answer_event,
+    update_or_create_project_record,
+)
 
 logger = get_task_logger(__name__)
 
@@ -37,97 +38,44 @@ def process_webhook_event(event_id: int):
     event.save()
 
 
-def process_project_event(event: WebhookEvent):
-    for grist_config in GristConfig.objects.filter(enabled=True):
-        client = GristApiClient.from_config(grist_config)
-
-        project_id = int(event.object_id)
-
-        resp = client.get_records(
-            table_id=grist_config.table_id,
-            filter={"object_id": [project_id]},
-        )
-
-        row_data = map_from_project_payload_object(
-            obj=event.object_data,
-            available_keys=grist_config.column_configs.values_list(
-                "grist_column__col_id", flat=True
-            ),
-        )
-
-        if len(records := resp["records"]):
-            client.update_records(
-                table_id=grist_config.table_id,
-                records={
-                    records[0]["id"]: row_data,
-                },
-            )
-            continue
-
-        client.create_records(
-            table_id=grist_config.table_id,
-            records=[{"object_id": project_id} | row_data],
-        )
-
-
-def process_survey_answer_event(event: WebhookEvent):
-    for grist_config in GristConfig.objects.filter(enabled=True):
-        client = GristApiClient.from_config(grist_config)
-
-        project_id = int(event.object_data.get("project"))
-
-        resp = client.get_records(
-            table_id=grist_config.table_id,
-            filter={"object_id": [project_id]},
-        )
-
-        if len(records := resp["records"]):
-            row_data = map_from_survey_answer_payload_object(
-                obj=event.object_data,
-                available_keys=grist_config.column_configs.values_list(
-                    "grist_column__col_id", flat=True
-                ),
-            )
-
-            client.update_records(
-                table_id=grist_config.table_id,
-                records={
-                    records[0]["id"]: row_data,
-                },
-            )
-
-
 @shared_task
 def populate_grist_table(config_id: str):
-    config = GristConfig.objects.get(id=config_id)
-    grist_table_columns = config.table_columns
-    grist_table_headers = config.table_headers
+    try:
+        config = GristConfig.objects.get(id=config_id)
+    except GristConfig.DoesNotExist:
+        logger.error(f"GristConfig with id={config_id} does not exist")
+        return
 
     grist_client = GristApiClient.from_config(config)
 
     grist_client.create_table(
         table_id=config.table_id,
-        columns=grist_table_columns,
+        columns=config.table_columns,
     )
 
-    recoco_client = RecocoApiClient()
+    batch_records = []
+    batch_size = 100
 
-    for project in recoco_client.get_projects():
-        row_data = map_from_project_payload_object(obj=project, available_keys=grist_table_headers)
+    for project_id, project_data in fetch_projects_data(config=config):
+        batch_records.append({"object_id": project_id} | project_data)
 
-        sessions = recoco_client.get_survey_sessions(project_id=project["id"])
-        if sessions["count"] > 0:
-            answers = recoco_client.get_survey_session_answers(
-                session_id=sessions["results"][0]["id"]
-            )
-            for answer in answers["results"]:
-                row_data.update(
-                    map_from_survey_answer_payload_object(
-                        obj=answer, available_keys=grist_table_headers
-                    )
-                )
+        if len(batch_records) > batch_size - 1:
+            grist_client.create_records(table_id=config.table_id, records=batch_records)
+            batch_records = []
 
-        grist_client.create_records(
-            table_id=config.table_id,
-            records=[{"object_id": project["id"]} | row_data],
+    if len(batch_records) > 0:
+        grist_client.create_records(table_id=config.table_id, records=batch_records)
+
+
+@shared_task
+def refresh_grist_table(config_id: str):
+    try:
+        config = GristConfig.objects.get(id=config_id)
+    except GristConfig.DoesNotExist:
+        logger.error(f"GristConfig with id={config_id} does not exist")
+        return
+
+    for project_id, project_data in fetch_projects_data(config=config):
+        update_or_create_project_record(
+            config=config, project_id=project_id, project_data=project_data
         )
