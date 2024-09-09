@@ -55,6 +55,7 @@ class GristColumnInline(admin.TabularInline):
 class GristConfigAdmin(admin.ModelAdmin):
     list_display = (
         "id",
+        "name",
         "api_base_url",
         "enabled",
     )
