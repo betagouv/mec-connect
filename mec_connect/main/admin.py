@@ -5,10 +5,14 @@ from django.contrib.auth.admin import UserAdmin
 from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
-from main.grist import default_columns_spec, grist_table_exists
-from main.tasks import populate_grist_table
 
 from .models import GristColumn, GristConfig, GritColumnConfig, User, WebhookEvent
+from .services import (
+    check_table_columns_consistency,
+    grist_table_exists,
+    update_or_create_columns_config,
+)
+from .tasks import populate_grist_table, refresh_grist_table
 
 
 @admin.register(WebhookEvent)
@@ -69,7 +73,9 @@ class GristConfigAdmin(admin.ModelAdmin):
         "reset_columns",
     )
 
-    @admin.action(description="Créer la table Grist des configurations sélectionnées")
+    @admin.action(
+        description="Créer ou mettre à jour la table Grist des configurations sélectionnées"
+    )
     def setup_grist_table(self, request: HttpRequest, queryset: QuerySet[GristConfig]):
         for config in queryset:
             self._setup_grist_table_from_config(request, config)
@@ -83,18 +89,28 @@ class GristConfigAdmin(admin.ModelAdmin):
             )
             return
 
-        if grist_table_exists(config):
+        if not grist_table_exists(config):
+            populate_grist_table.delay(config.id)
             self.message_user(
                 request,
-                f"Configuration {config.id}: la table {config.table_id} existe déjà.",
+                f"Configuration {config.id}: une tâche de création a été lancée.",
+                messages.SUCCESS,
+            )
+            return
+
+        if not check_table_columns_consistency(config):
+            self.message_user(
+                request,
+                f"Configuration {config.id}: les colonnes ne sont pas cohérentes. "
+                f"Impossible de mettre à jour la table {config.table_id}.",
                 messages.ERROR,
             )
             return
 
-        populate_grist_table.delay(config.id)
+        refresh_grist_table.delay(config.id)
         self.message_user(
             request,
-            f"Configuration {config.id}: une tâche a été lancée.",
+            f"Configuration {config.id}: une tâche de mise à jour a été lancée.",
             messages.SUCCESS,
         )
 
@@ -103,25 +119,13 @@ class GristConfigAdmin(admin.ModelAdmin):
     )
     def reset_columns(self, request: HttpRequest, queryset: QuerySet[GristConfig]):
         for config in queryset:
-            self._reset_columns_from_config(request, config)
-
-    def _reset_columns_from_config(self, request: HttpRequest, config: GristConfig):
-        GritColumnConfig.objects.filter(grist_config=config).delete()
-
-        position = 0
-        for col_id in default_columns_spec.keys():
-            GritColumnConfig.objects.get_or_create(
-                grist_column=GristColumn.objects.get(col_id=col_id),
-                grist_config=config,
-                defaults={"position": position},
+            GritColumnConfig.objects.filter(grist_config=config).delete()
+            update_or_create_columns_config(config=config)
+            self.message_user(
+                request,
+                f"Configuration {config.id}: reset columns.",
+                messages.SUCCESS,
             )
-            position += 10
-
-        self.message_user(
-            request,
-            f"Configuration {config.id}: reset columns.",
-            messages.SUCCESS,
-        )
 
 
 @admin.register(User)

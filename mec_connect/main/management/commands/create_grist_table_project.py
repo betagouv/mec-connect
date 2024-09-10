@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from django.core.management.base import BaseCommand, CommandParser
-from main.grist import grist_table_exists
+from main.clients.grist import grist_table_exists, table_columns_are_consistent
 from main.models import GristConfig
-from main.tasks import populate_grist_table
+from main.tasks import populate_grist_table, refresh_grist_table
 
 
 class Command(BaseCommand):
@@ -35,22 +35,28 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(f"Processing Grist config {config.id}")
-        if grist_table_exists(config):
-            self.stdout.write(
-                self.style.ERROR(f"Table {config.table_id} already exists, aborting.")
-            )
-            return
-
         self.stdout.write(f" >> URL: {config.api_base_url}")
         self.stdout.write(f" >> doc ID: {config.doc_id}")
         self.stdout.write(f" >> table ID: {config.table_id}")
 
+        task_func = None
+        if grist_table_exists(config=config):
+            if not table_columns_are_consistent(config=config):
+                self.stdout.write(
+                    self.style.ERROR("Columns in Grist table are not consistent with the config")
+                )
+                return
+            task_func = refresh_grist_table
+        else:
+            self.stdout.write(f"Table {config.table_id} does not exist yet, calling populate")
+            task_func = populate_grist_table
+
         self.stdout.write("\nStart processing ...")
 
         if options["async"]:
-            populate_grist_table.delay(config.id)
+            task_func.delay(config.id)
             self.stdout.write(self.style.SUCCESS("Celery task triggered!"))
             return
 
-        populate_grist_table.s(config.id)()
+        task_func.s(config.id)()
         self.stdout.write(self.style.SUCCESS("Done!"))
