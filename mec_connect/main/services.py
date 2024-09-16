@@ -111,17 +111,21 @@ def grist_table_exists(config: GristConfig) -> bool:
 def check_table_columns_consistency(config: GristConfig) -> bool:
     """Check the columns of a table in Grist are consistent with the config."""
 
+    config_table_columns = config.table_columns
+    config_table_columns_keys = [t["id"] for t in config_table_columns]
+
     remote_table_columns = GristApiClient.from_config(config).get_table_columns(
         table_id=config.table_id
     )
+    remote_table_columns = [
+        {"id": t["id"], "fields": {k: t["fields"][k] for k in ("label", "type")}}
+        for t in remote_table_columns
+        if t["id"] in config_table_columns_keys
+    ]
 
-    return sorted(
-        [
-            {"id": t["id"], "fields": {k: t["fields"][k] for k in ("label", "type")}}
-            for t in remote_table_columns
-        ],
-        key=lambda x: x["id"],
-    ) == sorted(config.table_columns, key=lambda x: x["id"])
+    return sorted(remote_table_columns, key=lambda x: x["id"]) == sorted(
+        config_table_columns, key=lambda x: x["id"]
+    )
 
 
 def map_from_project_payload_object(
