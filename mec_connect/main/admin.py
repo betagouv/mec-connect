@@ -5,6 +5,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
+from httpx import HTTPStatusError
 
 from .models import GristColumn, GristConfig, GritColumnConfig, User, WebhookEvent
 from .services import (
@@ -89,7 +90,19 @@ class GristConfigAdmin(admin.ModelAdmin):
             )
             return
 
-        if not grist_table_exists(config):
+        try:
+            table_exists = grist_table_exists(config)
+        except HTTPStatusError as err:
+            if err.response.status_code == 404:
+                self.message_user(
+                    request,
+                    f"Configuration {config.id}: le document {config.doc_id} n'existe pas.",
+                    messages.ERROR,
+                )
+                return
+            raise err
+
+        if not table_exists:
             populate_grist_table.delay(config.id)
             self.message_user(
                 request,
