@@ -9,16 +9,18 @@ from main.services import (
     grist_table_exists,
     map_from_project_payload_object,
     map_from_survey_answer_payload_object,
-    update_or_create_columns,
-    update_or_create_columns_config,
 )
 
 from .factories import GristConfigFactory
 from .fixtures import table_columns
 
 
-def test_map_from_project_payload_object(project_payload_object):
-    assert map_from_project_payload_object(obj=project_payload_object) == {
+@pytest.mark.django_db
+def test_map_from_project_payload_object(project_payload_object, default_columns):
+    assert map_from_project_payload_object(
+        obj=project_payload_object,
+        config=GristConfigFactory(create_columns_config=True),
+    ) == {
         "name": "Pôle Santé",
         "context": "Le projet consiste à créer un pôle santé",
         "city": "MONNIERES",
@@ -31,8 +33,12 @@ def test_map_from_project_payload_object(project_payload_object):
     }
 
 
-def test_map_from_survey_answer_payload_object(survey_answer_payload_object):
-    assert map_from_survey_answer_payload_object(obj=survey_answer_payload_object) == {
+@pytest.mark.django_db
+def test_map_from_survey_answer_payload_object(survey_answer_payload_object, default_columns):
+    assert map_from_survey_answer_payload_object(
+        obj=survey_answer_payload_object,
+        config=GristConfigFactory(create_columns_config=True),
+    ) == {
         "topics": "Commerce rural,Citoyenneté / Participation de la population à la vie locale,"
         "Transition écologique et biodiversité,"
         "Transition énergétique",
@@ -49,12 +55,8 @@ def test_grist_table_exists():
 
 @pytest.mark.django_db
 @patch("main.services.GristApiClient.get_table_columns", Mock(return_value=table_columns))
-def test_check_table_columns_consistency():
-    update_or_create_columns()
-
-    config = GristConfigFactory()
-    update_or_create_columns_config(config)
-
+def test_check_table_columns_consistency(default_columns):
+    config = GristConfigFactory(create_columns_config=True)
     assert check_table_columns_consistency(config) is True
 
     GritColumnConfig.objects.create(
