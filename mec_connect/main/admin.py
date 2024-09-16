@@ -103,10 +103,10 @@ class GristConfigAdmin(admin.ModelAdmin):
             raise err
 
         if not table_exists:
-            populate_grist_table.delay(config.id)
+            res = populate_grist_table.delay(config.id)
             self.message_user(
                 request,
-                f"Configuration {config}: une tâche de création a été lancée.",
+                f"Configuration {config}: une tâche de création a été lancée (task ID: {res.id}).",
                 messages.SUCCESS,
             )
             return
@@ -120,10 +120,10 @@ class GristConfigAdmin(admin.ModelAdmin):
             )
             return
 
-        refresh_grist_table.delay(config.id)
+        res = refresh_grist_table.delay(config.id)
         self.message_user(
             request,
-            f"Configuration {config}: une tâche de mise à jour a été lancée.",
+            f"Configuration {config}: une tâche de mise à jour a été lancée (task ID: {res.id}).",
             messages.SUCCESS,
         )
 
