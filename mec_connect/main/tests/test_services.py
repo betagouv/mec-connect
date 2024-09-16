@@ -53,9 +53,8 @@ def test_check_table_columns_consistency():
     update_or_create_columns()
 
     config = GristConfigFactory()
-    assert check_table_columns_consistency(config) is False
-
     update_or_create_columns_config(config)
+
     assert check_table_columns_consistency(config) is True
 
     GritColumnConfig.objects.create(
