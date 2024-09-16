@@ -5,6 +5,7 @@ from django.contrib.auth.admin import UserAdmin
 from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
+from httpx import HTTPStatusError
 
 from .models import GristColumn, GristConfig, GritColumnConfig, User, WebhookEvent
 from .services import (
@@ -84,16 +85,28 @@ class GristConfigAdmin(admin.ModelAdmin):
         if not config.enabled:
             self.message_user(
                 request,
-                f"Configuration {config.id}: inactive.",
+                f"Configuration {config}: inactive.",
                 messages.ERROR,
             )
             return
 
-        if not grist_table_exists(config):
+        try:
+            table_exists = grist_table_exists(config)
+        except HTTPStatusError as err:
+            if err.response.status_code == 404:
+                self.message_user(
+                    request,
+                    f"Configuration {config}: le document {config.doc_id} n'existe pas.",
+                    messages.ERROR,
+                )
+                return
+            raise err
+
+        if not table_exists:
             populate_grist_table.delay(config.id)
             self.message_user(
                 request,
-                f"Configuration {config.id}: une tâche de création a été lancée.",
+                f"Configuration {config}: une tâche de création a été lancée.",
                 messages.SUCCESS,
             )
             return
@@ -101,7 +114,7 @@ class GristConfigAdmin(admin.ModelAdmin):
         if not check_table_columns_consistency(config):
             self.message_user(
                 request,
-                f"Configuration {config.id}: les colonnes ne sont pas cohérentes. "
+                f"Configuration {config}: les colonnes ne sont pas cohérentes. "
                 f"Impossible de mettre à jour la table {config.table_id}.",
                 messages.ERROR,
             )
@@ -110,7 +123,7 @@ class GristConfigAdmin(admin.ModelAdmin):
         refresh_grist_table.delay(config.id)
         self.message_user(
             request,
-            f"Configuration {config.id}: une tâche de mise à jour a été lancée.",
+            f"Configuration {config}: une tâche de mise à jour a été lancée.",
             messages.SUCCESS,
         )
 
