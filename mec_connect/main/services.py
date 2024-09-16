@@ -11,7 +11,7 @@ from .models import GristColumn, GristConfig, GritColumnConfig, WebhookEvent
 logger = logging.getLogger(__name__)
 
 
-def update_or_create_project_record(config: GristApiClient, project_id: int, project_data: dict):
+def update_or_create_project_record(config: GristConfig, project_id: int, project_data: dict):
     """
     Update a record related to a givent project, in a Grist table,
     or create it if it doesn't exist.
@@ -47,9 +47,7 @@ def process_project_event(event: WebhookEvent):
 
         project_data = map_from_project_payload_object(
             obj=event.object_data,
-            available_keys=grist_config.column_configs.values_list(
-                "grist_column__col_id", flat=True
-            ),
+            config=grist_config,
         )
 
         update_or_create_project_record(
@@ -64,10 +62,7 @@ def process_survey_answer_event(event: WebhookEvent):
         project_id = int(event.object_data.get("project"))
 
         project_data = map_from_survey_answer_payload_object(
-            obj=event.object_data,
-            available_keys=grist_config.column_configs.values_list(
-                "grist_column__col_id", flat=True
-            ),
+            obj=event.object_data, config=grist_config
         )
 
         update_or_create_project_record(
@@ -78,14 +73,10 @@ def process_survey_answer_event(event: WebhookEvent):
 def fetch_projects_data(config: GristConfig) -> Generator[tuple[int, dict]]:
     """Fetch data related to projects from Recoco API."""
 
-    available_table_headers = config.table_headers
-
     recoco_client = RecocoApiClient()
 
     for project in recoco_client.get_projects():
-        project_data = map_from_project_payload_object(
-            obj=project, available_keys=available_table_headers
-        )
+        project_data = map_from_project_payload_object(obj=project, config=config)
 
         sessions = recoco_client.get_survey_sessions(project_id=project["id"])
         if sessions["count"] > 0:
@@ -94,9 +85,7 @@ def fetch_projects_data(config: GristConfig) -> Generator[tuple[int, dict]]:
             )
             for answer in answers["results"]:
                 project_data.update(
-                    map_from_survey_answer_payload_object(
-                        obj=answer, available_keys=available_table_headers
-                    )
+                    map_from_survey_answer_payload_object(obj=answer, config=config)
                 )
 
         yield project["id"], project_data
@@ -128,10 +117,11 @@ def check_table_columns_consistency(config: GristConfig) -> bool:
     )
 
 
-def map_from_project_payload_object(
-    obj: dict[str, Any], available_keys: list[str] | None = None
-) -> dict[str, Any]:
-    """Map a project payload object to a dictionary with the specified keys."""
+def map_from_project_payload_object(obj: dict[str, Any], config: GristConfig) -> dict[str, Any]:
+    """Map a project payload object respecting a Grist configuration."""
+
+    if not len(available_keys := config.table_headers):
+        return {}
 
     try:
         data = {
@@ -142,26 +132,25 @@ def map_from_project_payload_object(
             "insee": int(obj["commune"]["insee"]),
             "department": obj["commune"]["department"]["name"],
             "department_code": int(obj["commune"]["department"]["code"]),
-            # FIXME: remove the "if" condition once the API is fixed
-            "location": obj["location"] if "location" in obj else None,
-            "tags": ",".join(obj["tags"]) if "tags" in obj else None,
+            "location": obj["location"],
+            "tags": ",".join(obj["tags"]),
         }
     except (KeyError, ValueError) as exc:
         logger.error(f"Error while mapping project #{obj["id"]} payload object: {exc}")
         return {}
 
-    if available_keys is None:
-        return data
-
     return {k: data[k] for k in available_keys if k in data}
 
 
 def map_from_survey_answer_payload_object(
-    obj: dict[str, Any], available_keys: list[str] | None = None
+    obj: dict[str, Any], config: GristConfig
 ) -> dict[str, Any]:
-    """Map a survey answer payload object to a dictionary with the specified keys."""
+    """Map a survey answer payload object respecting a Grist configuration."""
 
     data = {}
+
+    if not len(available_keys := config.table_headers):
+        return data
 
     def _format_choices(_obj):
         return ",".join([c["text"] for c in _obj["choices"]])
@@ -234,9 +223,6 @@ def map_from_survey_answer_payload_object(
 
         case _:
             logger.info(f"Unhandled question: {obj['question']['text_short']}")
-
-    if available_keys is None:
-        return data
 
     return {k: data[k] for k in available_keys if k in data}
 

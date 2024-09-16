@@ -6,6 +6,7 @@ import factory
 import factory.fuzzy
 from main.choices import ObjectType
 from main.models import GristConfig, WebhookEvent
+from main.services import update_or_create_columns_config
 
 
 class BaseFactory(factory.django.DjangoModelFactory):
@@ -36,3 +37,10 @@ class GristConfigFactory(BaseFactory):
     name = factory.Faker("word")
     doc_id = factory.fuzzy.FuzzyText(length=10)
     table_id = factory.fuzzy.FuzzyText(length=10)
+
+    @factory.post_generation
+    def create_columns_config(obj, create, extracted, **kwargs):  # noqa: N805
+        if not create:
+            return
+        if extracted:
+            update_or_create_columns_config(config=obj)
