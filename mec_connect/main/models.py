@@ -104,6 +104,9 @@ class GristConfig(BaseModel):
     def table_headers(self) -> list[str]:
         return list(self.column_configs.values_list("grist_column__col_id", flat=True))
 
+    def __str__(self) -> str:
+        return self.name or self.doc_id
+
 
 class GristColumn(BaseModel):
     col_id = models.CharField(max_length=64, unique=True)
