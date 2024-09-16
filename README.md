@@ -15,3 +15,5 @@ Plusieurs outils et processus sont utilisés pour gérer la qualité de code.
 Trouvez les détails d'installation de l'application en local pour le développement sur la documentation dédiée : [DEVELOPPEUR.md](doc/DEVELOPPEUR.md).
 
 Trouvez les détails du déploiement de l'application sur la documentation dédiée : [DEPLOIEMENT.md](doc/DEPLOIEMENT.md).
+
+Les prochaines étapes sont listées [ici](doc/TODO.md).
