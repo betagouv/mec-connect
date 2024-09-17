@@ -72,6 +72,10 @@ class RecocoApiClient:
         response = self._client.get("/projects/")
         return response.json()
 
+    def get_project(self, project_id: int) -> dict[str, Any]:
+        response = self._client.get(f"/projects/{project_id}/")
+        return response.json()
+
     def get_survey_sessions(self, project_id: int) -> dict[str, Any]:
         response = self._client.get(f"/survey/sessions/?project_id={project_id}")
         return response.json()

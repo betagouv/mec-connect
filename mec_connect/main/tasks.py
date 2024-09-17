@@ -9,9 +9,8 @@ from .choices import ObjectType, WebhookEventStatus
 from .clients import GristApiClient
 from .models import GristConfig, WebhookEvent
 from .services import (
+    check_column_filters,
     fetch_projects_data,
-    process_project_event,
-    process_survey_answer_event,
     update_or_create_project_record,
 )
 
@@ -28,14 +27,26 @@ def process_webhook_event(event_id: int):
 
     match event.object_type:
         case ObjectType.PROJECT | ObjectType.TAGGEDITEM:
-            process_project_event(event=event)
+            project_id = int(event.object_id)
         case ObjectType.SURVEY_ANSWER:
-            process_survey_answer_event(event=event)
+            project_id = int(event.object_data.get("project"))
         case _:
             assert_never(event.object_type)
 
+    _update_project(project_id=project_id)
+
     event.status = WebhookEventStatus.PROCESSED
     event.save()
+
+
+def _update_project(project_id: int) -> None:
+    for config in GristConfig.objects.filter(enabled=True):
+        for _, project_data in fetch_projects_data(config=config, project_ids=[project_id]):
+            if not check_column_filters(filters=config.filters, obj=project_data):
+                continue
+            update_or_create_project_record(
+                config=config, project_id=project_id, project_data=project_data
+            )
 
 
 @shared_task
@@ -57,6 +68,9 @@ def populate_grist_table(config_id: str):
     batch_size = 100
 
     for project_id, project_data in fetch_projects_data(config=config):
+        if not check_column_filters(filters=config.filters, obj=project_data):
+            continue
+
         batch_records.append({"object_id": project_id} | project_data)
 
         if len(batch_records) > batch_size - 1:
@@ -76,6 +90,9 @@ def refresh_grist_table(config_id: str):
         return
 
     for project_id, project_data in fetch_projects_data(config=config):
+        if not check_column_filters(filters=config.filters, obj=project_data):
+            continue
+
         update_or_create_project_record(
             config=config, project_id=project_id, project_data=project_data
         )

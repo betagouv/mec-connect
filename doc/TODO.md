@@ -1,5 +1,5 @@
 # TODO
 
-- ajouter un filtre par colonne dans la config Grist, afin d'avoir une table filtrée (Ex: code département == 95)
+- crypter le champ de clé d'API dans les objets de configuration
 - ajouter une tâche planifiée pour nettoyer les objets tros vieux (webhook events & celery task results)
 - écrire de la doc

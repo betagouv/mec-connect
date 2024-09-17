@@ -13,34 +13,25 @@ from .factories import GristConfigFactory, WebhookEventFactory
 
 class ProcessWebhookEventTests(ParametrizedTestCase):
     @parametrize(
-        "object_type, task_project_called, task_survey_called",
+        "object_type, object_id, object_payload",
         [
-            param(ObjectType.PROJECT, True, False, id="project"),
-            param(ObjectType.PROJECT, True, False, id="taggeditem"),
-            param(ObjectType.SURVEY_ANSWER, False, True, id="survey_answer"),
+            param(ObjectType.PROJECT, 999, {"project": 999}, id="project"),
+            param(ObjectType.PROJECT, 999, {"project": 999}, id="taggeditem"),
+            param(ObjectType.SURVEY_ANSWER, 888, {"project": 999}, id="survey_answer"),
         ],
     )
     @pytest.mark.django_db
-    def test_task_triggered_and_event_saved(
-        self, object_type, task_project_called, task_survey_called
-    ):
-        event = WebhookEventFactory(object_type=object_type)
+    def test_task_triggered_and_event_saved(self, object_type, object_id, object_payload):
+        event = WebhookEventFactory(
+            object_type=object_type,
+            object_id=object_id,
+            payload={"object": object_payload},
+        )
 
-        with (
-            patch("main.tasks.process_project_event") as process_project_mock,
-            patch("main.tasks.process_survey_answer_event") as process_survey_mock,
-        ):
+        with patch("main.tasks._update_project") as mock_update_project:
             process_webhook_event(event_id=event.id)
 
-        if task_project_called:
-            process_project_mock.assert_called_once_with(event=event)
-        else:
-            process_project_mock.assert_not_called()
-
-        if task_survey_called:
-            process_survey_mock.assert_called_once_with(event=event)
-        else:
-            process_survey_mock.assert_not_called()
+        mock_update_project.assert_called_once_with(project_id=999)
 
         event.refresh_from_db()
         assert event.status == WebhookEventStatus.PROCESSED
