@@ -6,7 +6,7 @@ from typing import Any
 
 from .clients import GristApiClient, RecocoApiClient
 from .constants import default_columns_spec
-from .models import GristColumn, GristConfig, GritColumnConfig, WebhookEvent
+from .models import GristColumn, GristColumnFilter, GristConfig, GritColumnConfig
 
 logger = logging.getLogger(__name__)
 
@@ -39,43 +39,19 @@ def update_or_create_project_record(config: GristConfig, project_id: int, projec
     )
 
 
-def process_project_event(event: WebhookEvent):
-    """Process a webhook event related to a project."""
-
-    for grist_config in GristConfig.objects.filter(enabled=True):
-        project_id = int(event.object_id)
-
-        project_data = map_from_project_payload_object(
-            obj=event.object_data,
-            config=grist_config,
-        )
-
-        update_or_create_project_record(
-            config=grist_config, project_id=project_id, project_data=project_data
-        )
-
-
-def process_survey_answer_event(event: WebhookEvent):
-    """Process a webhook event related to a survey answer."""
-
-    for grist_config in GristConfig.objects.filter(enabled=True):
-        project_id = int(event.object_data.get("project"))
-
-        project_data = map_from_survey_answer_payload_object(
-            obj=event.object_data, config=grist_config
-        )
-
-        update_or_create_project_record(
-            config=grist_config, project_id=project_id, project_data=project_data
-        )
-
-
-def fetch_projects_data(config: GristConfig) -> Generator[tuple[int, dict]]:
+def fetch_projects_data(
+    config: GristConfig, project_ids: list[int] | None = None
+) -> Generator[tuple[int, dict]]:
     """Fetch data related to projects from Recoco API."""
 
     recoco_client = RecocoApiClient()
 
-    for project in recoco_client.get_projects():
+    if project_ids:
+        projects = [recoco_client.get_project(project_id=project_id) for project_id in project_ids]
+    else:
+        projects = recoco_client.get_projects()
+
+    for project in projects:
         project_data = map_from_project_payload_object(obj=project, config=config)
 
         sessions = recoco_client.get_survey_sessions(project_id=project["id"])
@@ -117,6 +93,13 @@ def check_table_columns_consistency(config: GristConfig) -> bool:
     )
 
 
+def check_column_filters(filters: list[GristColumnFilter], obj: dict[str, Any]) -> bool:
+    for filter in filters:
+        if not filter.check_object(obj):
+            return False
+    return True
+
+
 def map_from_project_payload_object(obj: dict[str, Any], config: GristConfig) -> dict[str, Any]:
     """Map a project payload object respecting a Grist configuration."""
 
@@ -142,18 +125,18 @@ def map_from_project_payload_object(obj: dict[str, Any], config: GristConfig) ->
     return {k: data[k] for k in available_keys if k in data}
 
 
-def map_from_survey_answer_payload_object(
+def map_from_survey_answer_payload_object(  # noqa: C901
     obj: dict[str, Any], config: GristConfig
 ) -> dict[str, Any]:
     """Map a survey answer payload object respecting a Grist configuration."""
 
-    data = {}
-
-    if not len(available_keys := config.table_headers):
-        return data
-
     def _format_choices(_obj):
         return ",".join([c["text"] for c in _obj["choices"]])
+
+    if not len(available_keys := config.table_headers):
+        return {}
+
+    data = {}
 
     map_question_slugs_columns = {
         "autres-programmes-et-contrats": "dependencies",

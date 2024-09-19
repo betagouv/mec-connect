@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django import forms
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.db.models import QuerySet
@@ -7,7 +8,15 @@ from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
 from httpx import HTTPStatusError
 
-from .models import GristColumn, GristConfig, GritColumnConfig, User, WebhookEvent
+from .choices import GristColumnType
+from .models import (
+    GristColumn,
+    GristColumnFilter,
+    GristConfig,
+    GritColumnConfig,
+    User,
+    WebhookEvent,
+)
 from .services import (
     check_table_columns_consistency,
     grist_table_exists,
@@ -56,6 +65,26 @@ class GristColumnInline(admin.TabularInline):
     ordering = ("position", "grist_column__col_id")
 
 
+class GristFilterInlineForm(forms.ModelForm):
+    grist_column = forms.ModelChoiceField(
+        queryset=GristColumn.objects.filter(
+            type__in=(
+                GristColumnType.BOOL,
+                GristColumnType.TEXT,
+                GristColumnType.NUMERIC,
+                GristColumnType.INTEGER,
+            )
+        ).exclude(label__startswith="PJ"),
+    )
+
+
+class GristFilterInline(admin.TabularInline):
+    model = GristColumnFilter
+    extra = 1
+    ordering = ("grist_column__col_id",)
+    form = GristFilterInlineForm
+
+
 @admin.register(GristConfig)
 class GristConfigAdmin(admin.ModelAdmin):
     list_display = (
@@ -67,7 +96,10 @@ class GristConfigAdmin(admin.ModelAdmin):
 
     list_filter = ("enabled",)
 
-    inlines = (GristColumnInline,)
+    inlines = (
+        GristFilterInline,
+        GristColumnInline,
+    )
 
     actions = (
         "setup_grist_table",

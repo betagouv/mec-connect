@@ -14,6 +14,7 @@ from mec_connect.utils.models import BaseModel
 
 from .choices import GristColumnType, ObjectType, WebhookEventStatus
 from .managers import UserManager
+from .utils import str2bool
 
 
 class WebhookEvent(BaseModel):
@@ -104,6 +105,10 @@ class GristConfig(BaseModel):
     def table_headers(self) -> list[str]:
         return list(self.column_configs.values_list("grist_column__col_id", flat=True))
 
+    @property
+    def filters(self, **kwargs: dict[str, Any]) -> list[GristColumnFilter]:
+        return list(self.column_filters.filter(**kwargs))
+
     def __str__(self) -> str:
         return self.name or self.doc_id
 
@@ -140,6 +145,56 @@ class GritColumnConfig(BaseModel):
         )
         verbose_name = "Grit column config"
         verbose_name_plural = "Grit column configs"
+
+
+class GristColumnFilter(BaseModel):
+    grist_column = models.ForeignKey(
+        GristColumn, on_delete=models.CASCADE, related_name="column_filters"
+    )
+    grist_config = models.ForeignKey(
+        GristConfig, on_delete=models.CASCADE, related_name="column_filters"
+    )
+
+    filter_value = models.CharField(max_length=255)
+
+    class Meta:
+        db_table = "gristcolumnfilter"
+        verbose_name = "Grist column filter"
+        verbose_name_plural = "Grist column filters"
+
+    def save(self, *args, **kwargs):
+        try:
+            self.cast_value(value=self.filter_value)
+        except ValueError as err:
+            raise ValueError(f"Invalid filter value: {self.filter_value}") from err
+        return super().save(*args, **kwargs)
+
+    def check_object(self, obj: dict[str, Any]) -> bool:
+        if self.grist_column.col_id not in obj.keys():
+            return False
+        for k, v in obj.items():
+            if k == self.grist_column.col_id:
+                return self.check_value(v)
+        return True
+
+    def check_value(self, value: Any) -> bool:
+        try:
+            return self.cast_value(value) == self.cast_value(self.filter_value)
+        except ValueError:
+            return False
+
+    def cast_value(self, value: str) -> Any:
+        match self.grist_column.type:
+            case GristColumnType.BOOL:
+                return str2bool(value)
+            case GristColumnType.INTEGER:
+                return int(value)
+            case GristColumnType.NUMERIC:
+                return float(value)
+            case GristColumnType.TEXT:
+                return str(value)
+            case _:
+                raise ValueError(f"Unhandled column type: {self.grist_column.type}")
 
 
 class User(BaseModel, AbstractBaseUser, PermissionsMixin):
