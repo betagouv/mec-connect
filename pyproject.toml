@@ -16,7 +16,7 @@ psycopg2-binary = "^2.9.9"
 django-extensions = "^3.2.3"
 celery = "^5.4.0"
 redis = "^5.0.4"
-django-model-utils = "^4.5.1"
+django-model-utils = "^5.0.0"
 gunicorn = "^22.0.0"
 whitenoise = "^6.6.0"
 sentry-sdk = { version = "^2.11.0", extras = ["django", "celery"] }
