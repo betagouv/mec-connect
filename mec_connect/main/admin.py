@@ -76,7 +76,9 @@ class GristFilterInlineForm(forms.ModelForm):
                 GristColumnType.CHOICE,
                 GristColumnType.CHOICE_LIST,
             )
-        ).exclude(label__startswith="PJ"),
+        )
+        .exclude(label__startswith="PJ")
+        .order_by("label"),
     )
 
 
