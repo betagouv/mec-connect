@@ -5,7 +5,7 @@ import uuid
 import factory
 import factory.fuzzy
 from main.choices import GristColumnType, ObjectType
-from main.models import GristColumn, GristConfig, WebhookEvent
+from main.models import GristColumn, GristColumnFilter, GristConfig, WebhookEvent
 from main.services import update_or_create_columns_config
 
 
@@ -53,3 +53,12 @@ class GristColumnFactory(BaseFactory):
     col_id = factory.Faker("word")
     label = factory.Faker("word")
     type = factory.fuzzy.FuzzyChoice(choices=GristColumnType.choices)
+
+
+class GristColumnFilterFactory(BaseFactory):
+    class Meta:
+        model = GristColumnFilter
+
+    grist_config = factory.SubFactory(GristConfigFactory)
+    grist_column = factory.SubFactory(GristColumnFactory)
+    filter_value = factory.Faker("word")

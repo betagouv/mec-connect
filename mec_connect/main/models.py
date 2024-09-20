@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Self
+from typing import Any, Self, assert_never
 
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core.handlers.wsgi import WSGIRequest
@@ -12,7 +12,7 @@ from django.utils.translation import gettext_lazy as _
 from mec_connect.utils.json import PrettyJSONEncoder
 from mec_connect.utils.models import BaseModel
 
-from .choices import GristColumnType, ObjectType, WebhookEventStatus
+from .choices import FilterOperator, GristColumnType, ObjectType, WebhookEventStatus
 from .managers import UserManager
 from .utils import str2bool
 
@@ -87,6 +87,9 @@ class GristConfig(BaseModel):
         ordering = ("-created",)
         verbose_name = "Configuration Grist"
         verbose_name_plural = "Configurations Grist"
+        indexes = [
+            models.Index(fields=["enabled"]),
+        ]
 
     @property
     def table_columns(self) -> list[dict[str, Any]]:
@@ -123,6 +126,9 @@ class GristColumn(BaseModel):
         ordering = ("col_id",)
         verbose_name = "Grist column"
         verbose_name_plural = "Grist columns"
+        indexes = [
+            models.Index(fields=["type"]),
+        ]
 
     def __str__(self) -> str:
         return self.label
@@ -157,6 +163,10 @@ class GristColumnFilter(BaseModel):
 
     filter_value = models.CharField(max_length=255)
 
+    filter_operator = models.CharField(
+        max_length=32, choices=FilterOperator.choices, default=FilterOperator.EQUAL
+    )
+
     class Meta:
         db_table = "gristcolumnfilter"
         verbose_name = "Grist column filter"
@@ -177,11 +187,28 @@ class GristColumnFilter(BaseModel):
                 return self.check_value(v)
         return True
 
-    def check_value(self, value: Any) -> bool:
+    def check_value(self, value: Any) -> bool:  # noqa: C901
         try:
-            return self.cast_value(value) == self.cast_value(self.filter_value)
+            c_value = self.cast_value(value)
+            c_filter_value = self.cast_value(self.filter_value)
         except ValueError:
             return False
+
+        match self.filter_operator:
+            case FilterOperator.EQUAL:
+                return c_value == c_filter_value
+            case FilterOperator.I_EQUAL:
+                return c_value.lower() == c_filter_value.lower()
+            case FilterOperator.NOT_EQUAL:
+                return c_value != c_filter_value
+            case FilterOperator.I_NOT_EQUAL:
+                return c_value.lower() != c_filter_value.lower()
+            case FilterOperator.CONTAINS:
+                return c_filter_value in c_value
+            case FilterOperator.I_CONTAINS:
+                return c_filter_value.lower() in c_value.lower()
+            case _:
+                assert_never(self.filter_operator)
 
     def cast_value(self, value: str) -> Any:
         match self.grist_column.type:
@@ -191,7 +218,7 @@ class GristColumnFilter(BaseModel):
                 return int(value)
             case GristColumnType.NUMERIC:
                 return float(value)
-            case GristColumnType.TEXT:
+            case GristColumnType.TEXT | GristColumnType.CHOICE | GristColumnType.CHOICE_LIST:
                 return str(value)
             case _:
                 raise ValueError(f"Unhandled column type: {self.grist_column.type}")

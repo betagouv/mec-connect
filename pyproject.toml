@@ -37,6 +37,9 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "mec_connect.settings.testing"
+addopts = [
+    "--reuse-db",
+]
 python_files = ["test_*.py"]
 
 [tool.ruff]
