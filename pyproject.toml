@@ -23,7 +23,7 @@ sentry-sdk = { version = "^2.11.0", extras = ["django", "celery"] }
 django-celery-results = "^2.5.1"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.6.5"
+ruff = "^0.6.8"
 pytest = "^8.3.3"
 pytest-django = "^4.8.0"
 pytest-xdist = "^3.6.1"
