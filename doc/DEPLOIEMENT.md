@@ -1,24 +1,27 @@
 # DEPLOIEMENT
 
-- mettre à jour la branche `main`
-```bash
-git switch main
-git pull
-```
-
-- obtenir le dernier numéro de version
+- Obtenir le dernier numéro de version avec la commande suivante:
 ```bash
 git describe --tags --abbrev=0
 ```
 
-- définir un nouveau numéro de version et créer un nouveau tag
+- Définir un nouveau numéro de version, mettre à jour le fichier `pyproject.toml`, et merger les changements dans la branche `main`.
+```
+[project]
+name = "mec-connect"
+version = "x.x.x"
+```
+
+- Revenir sur la branche `main`, la mettre à jour, et créer un nouveau tag.
 ```bash
+git switch main
+git pull
 git tag vx.x.x
 ```
 
-- pousser le tag pour déclencher le déploiement
+- Pousser le tag pour déclencher le déploiement.
 ```bash
 git push --tags
 ```
 
-- vérifier le déploiement dans Scalingo
+- Vérifier le déploiement dans Scalingo.
