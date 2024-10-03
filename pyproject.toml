@@ -1,45 +1,39 @@
-[tool.poetry]
+[project]
 name = "mec-connect"
-version = "0.1.0"
-description = ""
-authors = ["Etchegoyen Matthieu <etchegom@gmail.com>"]
+version = "0.2.2"
+description = "Add your description here"
 readme = "README.md"
-package-mode = false
+requires-python = ">=3.12"
+dependencies = [
+    "celery>=5.4.0",
+    "django-celery-results>=2.5.1",
+    "django-environ>=0.11.2",
+    "django-extensions>=3.2.3",
+    "django-model-utils>=5.0.0",
+    "django-ninja>=1.3.0",
+    "django>=5.1.1",
+    "gunicorn>=23.0.0",
+    "httpx>=0.27.2",
+    "psycopg2-binary>=2.9.9",
+    "redis>=5.1.0",
+    "sentry-sdk[celery,django]>=2.15.0",
+    "whitenoise>=6.7.0",
+]
 
-[tool.poetry.dependencies]
-python = "^3.12"
-httpx = "^0.27.0"
-django = "^5.0.6"
-django-environ = "^0.11.2"
-django-ninja = "^1.1.0"
-psycopg2-binary = "^2.9.9"
-django-extensions = "^3.2.3"
-celery = "^5.4.0"
-redis = "^5.0.4"
-django-model-utils = "^4.5.1"
-gunicorn = "^22.0.0"
-whitenoise = "^6.6.0"
-sentry-sdk = { version = "^2.11.0", extras = ["django", "celery"] }
-django-celery-results = "^2.5.1"
-
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.6.5"
-pytest = "^8.3.3"
-pytest-django = "^4.8.0"
-pytest-xdist = "^3.6.1"
-ipython = "^8.25.0"
-factory-boy = "^3.3.0"
-unittest-parametrize = "^1.4.0"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.uv]
+dev-dependencies = [
+    "factory-boy>=3.3.1",
+    "ipython>=8.28.0",
+    "pytest>=8.3.3",
+    "pytest-django>=4.9.0",
+    "pytest-xdist>=3.6.1",
+    "ruff>=0.6.8",
+    "unittest-parametrize>=1.4.0",
+]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "mec_connect.settings.testing"
-addopts = [
-    "--reuse-db",
-]
+addopts = ["--reuse-db"]
 python_files = ["test_*.py"]
 
 [tool.ruff]

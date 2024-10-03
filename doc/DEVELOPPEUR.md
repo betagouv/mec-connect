@@ -11,15 +11,12 @@ La première étape est donc de cloner ce repository github.
 
 ### Prérequis
 
-On utilise [pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation) pour l'installation de `python`, [poetry](https://python-poetry.org/) pour gérer les dépendances, et [docker](https://www.docker.com/get-started/) pour lancer les différences services autour de l'applicatif.
-
+On utilise [uv](https://docs.astral.sh/uv/) pour l'installation de python, ainsi que pour la gestion des dépendances.
 
 ### Environment virtuel python
 
 ```sh
-python -m venv .venv
-source .venv/bin/activate
-poetry install
+make install
 ```
 
 ### Services docker
@@ -76,9 +73,9 @@ pre-commit install
 
 ### Ajouter une dépendance
 
-Pour ajout une nouvelle dépendance, utiliser poetry, puis regénérer le fichier `requirements.txt`
+Pour ajout une nouvelle dépendance, utiliser uv, puis regénérer le fichier `requirements.txt`
 
 ```sh
-poetry add <any_dep>
+uv add <any_dep>
 make freeze-reqs
 ```

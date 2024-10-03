@@ -20,9 +20,15 @@ migrate:
 admin:
 	@xdg-open http://localhost:8002/admin
 
+install:
+	@deactivate 2>/dev/null || true
+	@rm -rf .venv
+	@uv venv
+	@source .venv/bin/activate
+	@uv sync
+
 freeze-reqs:
-	@poetry lock --no-update
-	@poetry export --without-hashes --without-urls | awk '{ print $$1 }' FS=';' > requirements.txt
+	@uv pip freeze > requirements.txt
 
 scalingo-prod-shell:
 	@scalingo --app mec-connect-prod --region osc-secnum-fr1 run bash
