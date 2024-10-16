@@ -2,7 +2,7 @@
 #    uv export --format requirements-txt --no-hashes --no-dev --output-file requirements.txt
 amqp==5.2.0
 annotated-types==0.7.0
-anyio==4.6.0
+anyio==4.6.2.post1
 asgiref==3.8.1
 billiard==4.2.1
 celery==5.4.0
